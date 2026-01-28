@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Minha Página Inicial",
+  "version": "1.0.0",
+  "description": "Sua página inicial personalizada com categorias e favoritos.",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Página Inicial",
+    "default_icon": "icon.svg"
+  },
+  "icons": {
+    "128": "icon.svg"
+  },
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  }
+}

@@ -1,0 +1,27 @@
+body {
+  font-family: "Poppins", sans-serif;
+}
+.title-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.dragging {
+  opacity: 0.5;
+}
+.drag-over {
+  border: 2px dashed #3b82f6;
+}
+.drag-over-bookmark::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  height: 100%;
+  width: 4px;
+  background-color: #3b82f6;
+  border-radius: 2px;
+}
