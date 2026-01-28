@@ -1,5 +1,5 @@
 {
-  "name": "homepage-react",
+  "name": "homepage-extension",
   "module": "index.ts",
   "type": "module",
   "private": true,
