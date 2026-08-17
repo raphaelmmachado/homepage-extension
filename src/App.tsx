@@ -9,14 +9,96 @@ import { extractFaviconFromURL } from "./helpers";
 import * as svgs from "./svgs";
 
 function App() {
-  const [containers, setContainers] = useState<Container[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CONTAINERS);
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [containers, setContainers] = useState<Container[]>([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
+  const loadBookmarks = async () => {
+    if (typeof chrome === 'undefined' || !chrome.bookmarks) return;
+
+    const tree = await chrome.bookmarks.getTree();
+    
+    // We want the Bookmarks Bar, usually id "1"
+    const bookmarksBar = tree[0]?.children?.find(node => node.id === "1") || tree[0]?.children?.[0];
+    if (!bookmarksBar || !bookmarksBar.children) return;
+
+    const newContainers: Container[] = [];
+    const newBookmarks: Bookmark[] = [];
+    
+    // Load local clicks
+    const savedClicksRaw = localStorage.getItem(STORAGE_KEYS.BOOKMARK_CLICKS);
+    const savedClicks = savedClicksRaw ? JSON.parse(savedClicksRaw) : {};
+
+    // For any loose bookmarks in Bookmarks Bar, we'll put them in a default container
+    const defaultContainerId = "1";
+    let hasLooseBookmarks = false;
+
+    for (const node of bookmarksBar.children) {
+      if (node.url) {
+        // It's a bookmark
+        hasLooseBookmarks = true;
+        newBookmarks.push({
+          id: node.id,
+          containerId: defaultContainerId,
+          title: node.title,
+          name: node.title,
+          url: node.url,
+          clicks: savedClicks[node.url] || 0
+        });
+      } else {
+        // It's a folder (container)
+        newContainers.push({
+          id: node.id,
+          title: node.title
+        });
+        
+        // Add its children as bookmarks
+        if (node.children) {
+          for (const child of node.children) {
+            if (child.url) {
+              newBookmarks.push({
+                id: child.id,
+                containerId: node.id,
+                title: child.title,
+                name: child.title,
+                url: child.url,
+                clicks: savedClicks[child.url] || 0
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (hasLooseBookmarks) {
+      newContainers.unshift({
+        id: defaultContainerId,
+        title: "Barra de Favoritos"
+      });
+    }
+
+    setContainers(newContainers);
+    setBookmarks(newBookmarks);
+  };
+
+  useEffect(() => {
+    loadBookmarks();
+
+    if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+      chrome.bookmarks.onCreated.addListener(loadBookmarks);
+      chrome.bookmarks.onRemoved.addListener(loadBookmarks);
+      chrome.bookmarks.onChanged.addListener(loadBookmarks);
+      chrome.bookmarks.onMoved.addListener(loadBookmarks);
+      chrome.bookmarks.onChildrenReordered.addListener(loadBookmarks);
+      
+      return () => {
+        chrome.bookmarks.onCreated.removeListener(loadBookmarks);
+        chrome.bookmarks.onRemoved.removeListener(loadBookmarks);
+        chrome.bookmarks.onChanged.removeListener(loadBookmarks);
+        chrome.bookmarks.onMoved.removeListener(loadBookmarks);
+        chrome.bookmarks.onChildrenReordered.removeListener(loadBookmarks);
+      };
+    }
+  }, []);
 
   const [activeSearchEngine, setActiveSearchEngine] = useState<SearchEngineKey>(
     () => {
@@ -42,34 +124,32 @@ function App() {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    setBookmarks((prev) => {
-      const newBookmarks = [...prev];
-      const itemIndex = newBookmarks.findIndex((b) => b.id === draggableId);
-      if (itemIndex === -1) return prev;
-      
-      const [movedItem] = newBookmarks.splice(itemIndex, 1);
-      if (!movedItem) return prev;
-      
-      if (source.droppableId !== destination.droppableId) {
-        movedItem.containerId = destination.droppableId;
-      }
-      
-      const destItems = newBookmarks.filter(b => b.containerId === destination.droppableId);
-      destItems.splice(destination.index, 0, movedItem);
-      
-      const otherItems = newBookmarks.filter(b => b.containerId !== destination.droppableId);
-      return [...otherItems, ...destItems];
-    });
+    if (source.droppableId === "top-sites" || destination.droppableId === "top-sites") {
+      // Na Opção A, Top Sites é um container automático baseado em cliques
+      return;
+    }
+
+    if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+      chrome.bookmarks.move(draggableId, {
+        parentId: destination.droppableId,
+        index: destination.index
+      });
+    }
   };
 
   const handleBookmarkClick = (id: string) => {
-    setBookmarks((prev) => {
-      const newBookmarks = prev.map((b) =>
-        b.id === id ? { ...b, clicks: (b.clicks || 0) + 1 } : b
-      );
-      localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(newBookmarks));
-      return newBookmarks;
-    });
+    const bookmark = bookmarks.find(b => b.id === id);
+    if (!bookmark || !bookmark.url) return;
+
+    const url = bookmark.url;
+    const savedClicksRaw = localStorage.getItem(STORAGE_KEYS.BOOKMARK_CLICKS);
+    const savedClicks = savedClicksRaw ? JSON.parse(savedClicksRaw) : {};
+    savedClicks[url] = (savedClicks[url] || 0) + 1;
+    localStorage.setItem(STORAGE_KEYS.BOOKMARK_CLICKS, JSON.stringify(savedClicks));
+
+    setBookmarks((prev) =>
+      prev.map((b) => (b.url === url ? { ...b, clicks: savedClicks[url] } : b))
+    );
   };
 
 
@@ -87,8 +167,6 @@ function App() {
 
   // Save data
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CONTAINERS, JSON.stringify(containers));
-    localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
     localStorage.setItem(STORAGE_KEYS.SEARCH_ENGINE, activeSearchEngine);
     localStorage.setItem(STORAGE_KEYS.LAYOUT, currentLayout);
     localStorage.setItem(STORAGE_KEYS.THEME, currentTheme);
@@ -243,35 +321,6 @@ function App() {
   };
 
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.containers) setContainers(data.containers);
-        if (data.bookmarks) setBookmarks(data.bookmarks);
-      } catch {
-        alert("Erro ao importar arquivo JSON.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleExport = () => {
-    const data = { containers, bookmarks };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `homepage-bookmarks-${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const openAddBookmark = (containerId: string) => {
     setEditingBookmark(null);
@@ -284,38 +333,31 @@ function App() {
     setIsBookmarkDialogOpen(true);
   };
 
-  const saveBookmark = (e: React.FormEvent<HTMLFormElement>) => {
+  const saveBookmark = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = formData.get("name") as string;
+    const title = formData.get("name") as string;
     const url = formData.get("url") as string;
-    const description = formData.get("description") as string;
+    
+    if (typeof chrome === 'undefined' || !chrome.bookmarks) {
+      alert("A integração de favoritos requer que o app rode como extensão do Chrome/Brave.");
+      setIsBookmarkDialogOpen(false);
+      return;
+    }
 
     if (editingBookmark) {
-      setBookmarks((prev) =>
-        prev.map((b) =>
-          b.id === editingBookmark.id
-            ? { ...b, name, title: name, url, description }
-            : b,
-        ),
-      );
+      chrome.bookmarks.update(editingBookmark.id, { title, url });
     } else if (activeContainerId) {
-      const newBookmark: Bookmark = {
-        id: crypto.randomUUID(),
-        containerId: activeContainerId,
-        name,
-        title: name,
-        url,
-        description,
-      };
-      setBookmarks((prev) => [...prev, newBookmark]);
+      chrome.bookmarks.create({ parentId: activeContainerId, title, url });
     }
     setIsBookmarkDialogOpen(false);
   };
 
   const deleteBookmark = () => {
     if (editingBookmark) {
-      setBookmarks((prev) => prev.filter((b) => b.id !== editingBookmark.id));
+      if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+        chrome.bookmarks.remove(editingBookmark.id);
+      }
       setIsBookmarkDialogOpen(false);
     }
   };
@@ -323,30 +365,40 @@ function App() {
   const addContainer = () => {
     const title = prompt("Nome da Pasta:");
     if (title?.trim()) {
-      setContainers((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), title: title.trim() },
-      ]);
+      if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+        chrome.bookmarks.create({ parentId: "1", title: title.trim() });
+      } else {
+        alert("A integração de favoritos requer que o app rode como extensão.");
+      }
     }
   };
 
   const deleteContainer = (id: string, title: string) => {
+    if (id === "1") {
+      alert("Você não pode deletar a Barra de Favoritos.");
+      return;
+    }
     if (
       confirm(
-        `Tem certeza que deseja remover a pasta "${title}" e todos os seus favoritos?`,
+        `Tem certeza que deseja remover a pasta "${title}" e todos os seus favoritos? ISSO APAGARÁ DO SEU NAVEGADOR!`,
       )
     ) {
-      setContainers((prev) => prev.filter((c) => c.id !== id));
-      setBookmarks((prev) => prev.filter((b) => b.containerId !== id));
+      if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+        chrome.bookmarks.removeTree(id);
+      }
     }
   };
 
   const renameContainer = (id: string, oldTitle: string) => {
+    if (id === "1") {
+      alert("Você não pode renomear a Barra de Favoritos.");
+      return;
+    }
     const newTitle = prompt("Novo nome da pasta:", oldTitle);
     if (newTitle?.trim()) {
-      setContainers((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, title: newTitle.trim() } : c)),
-      );
+      if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+        chrome.bookmarks.update(id, { title: newTitle.trim() });
+      }
     }
   };
 
@@ -480,53 +532,11 @@ function App() {
                     />
                     <span>Alterar Layout</span>
                   </button>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <div
-                      className="w-6 h-6 flex items-center justify-center"
-                      dangerouslySetInnerHTML={{ __html: svgs.importSVG }}
-                    />
-                    <span>Importar Favoritos</span>
-                  </button>
-                  <button
-                    onClick={handleExport}
-                    className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <div
-                      className="w-6 h-6 flex items-center justify-center"
-                      dangerouslySetInnerHTML={{ __html: svgs.exportSVG }}
-                    />
-                    <span>Exportar Favoritos</span>
-                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="hidden sm:block text-gray-600 bg-white hover:bg-white/70 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 p-3 shadow-sm rounded-full transition-all"
-            title="Importar Favoritos"
-          >
-            <div dangerouslySetInnerHTML={{ __html: svgs.importSVG }} />
-          </button>
-          <button
-            onClick={handleExport}
-            className="hidden sm:block text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 dark:hover:bg-gray-700 hover:bg-white/70 p-3 shadow-sm rounded-full transition-all"
-            title="Exportar Favoritos"
-          >
-            <div dangerouslySetInnerHTML={{ __html: svgs.exportSVG }} />
-          </button>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImport}
-            className="hidden"
-            accept=".json"
-          />
         </div>
       </nav>
 

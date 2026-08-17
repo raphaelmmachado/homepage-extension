@@ -3,7 +3,7 @@
   "name": "Minha Página Inicial",
   "version": "1.0.0",
   "description": "Sua página inicial personalizada com categorias e favoritos.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "bookmarks"],
   "action": {
     "default_title": "Página Inicial",
     "default_icon": "icon.svg"

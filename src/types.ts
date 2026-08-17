@@ -19,6 +19,7 @@ export type Theme = 'light' | 'dark';
 export const STORAGE_KEYS = {
   BOOKMARKS: "my-homepage-bookmarks-v2",
   CONTAINERS: "my-homepage-containers-v2",
+  BOOKMARK_CLICKS: "my-homepage-bookmark-clicks",
   SEARCH_ENGINE: "my-homepage-search-engine",
   LAYOUT: "my-homepage-layout",
   THEME: "my-homepage-theme",
