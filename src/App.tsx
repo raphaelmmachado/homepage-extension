@@ -322,6 +322,168 @@ function App() {
 
 
 
+  const handleExport = () => {
+    const savedClicksRaw = localStorage.getItem(STORAGE_KEYS.BOOKMARK_CLICKS);
+    const savedClicks = savedClicksRaw ? JSON.parse(savedClicksRaw) : {};
+
+    const exportBookmarks = bookmarks.map((b) => ({
+      ...b,
+      clicks: savedClicks[b.url] || b.clicks || 0,
+    }));
+
+    const data = {
+      containers,
+      bookmarks: exportBookmarks,
+      clicks: savedClicks,
+      exportDate: new Date().toISOString(),
+      version: 2,
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `homepage-bookmarks-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (typeof chrome === "undefined" || !chrome.bookmarks) {
+      alert("A importação direta requer que a extensão esteja rodando no navegador.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (!data || (!data.containers && !data.bookmarks)) {
+          alert("Arquivo JSON inválido ou sem favoritos.");
+          return;
+        }
+
+        const confirmImport = confirm(
+          "Deseja importar estes favoritos para o seu navegador?\n\nIsso criará as pastas e links diretamente na sua Barra de Favoritos."
+        );
+        if (!confirmImport) return;
+
+        // Restaurar contagem de cliques se existirem no backup
+        if (
+          data.clicks ||
+          (Array.isArray(data.bookmarks) &&
+            data.bookmarks.some((b: any) => b.clicks))
+        ) {
+          const currentClicksRaw = localStorage.getItem(
+            STORAGE_KEYS.BOOKMARK_CLICKS,
+          );
+          const currentClicks = currentClicksRaw
+            ? JSON.parse(currentClicksRaw)
+            : {};
+
+          if (data.clicks) {
+            Object.assign(currentClicks, data.clicks);
+          }
+          if (Array.isArray(data.bookmarks)) {
+            data.bookmarks.forEach((b: any) => {
+              if (b.url && b.clicks) {
+                currentClicks[b.url] = Math.max(
+                  currentClicks[b.url] || 0,
+                  b.clicks,
+                );
+              }
+            });
+          }
+          localStorage.setItem(
+            STORAGE_KEYS.BOOKMARK_CLICKS,
+            JSON.stringify(currentClicks),
+          );
+        }
+
+        // Mapeamento: ID do container no arquivo -> ID da pasta real no Chrome
+        const containerMap = new Map<string, string>();
+
+        // 1. Obter pastas existentes na Barra de Favoritos ("1") para reaproveitar caso já existam
+        const tree = await chrome.bookmarks.getTree();
+        const bookmarksBar =
+          tree[0]?.children?.find((node) => node.id === "1") ||
+          tree[0]?.children?.[0];
+        const existingFolders = new Map<string, string>();
+        if (bookmarksBar?.children) {
+          for (const child of bookmarksBar.children) {
+            if (!child.url && child.title) {
+              existingFolders.set(child.title.toLowerCase().trim(), child.id);
+            }
+          }
+        }
+
+        // 2. Criar pastas para cada container do backup
+        if (Array.isArray(data.containers)) {
+          for (const container of data.containers) {
+            if (
+              !container.title ||
+              container.id === "1" ||
+              container.id === "default-container-1" ||
+              container.title === "Barra de Favoritos"
+            ) {
+              containerMap.set(container.id, "1");
+              continue;
+            }
+
+            const existingId = existingFolders.get(
+              container.title.toLowerCase().trim(),
+            );
+            if (existingId) {
+              containerMap.set(container.id, existingId);
+            } else {
+              const newFolder = await chrome.bookmarks.create({
+                parentId: "1",
+                title: container.title,
+              });
+              containerMap.set(container.id, newFolder.id);
+              existingFolders.set(
+                container.title.toLowerCase().trim(),
+                newFolder.id,
+              );
+            }
+          }
+        }
+
+        // 3. Criar os favoritos dentro de suas respectivas pastas
+        if (Array.isArray(data.bookmarks)) {
+          for (const b of data.bookmarks) {
+            if (!b.url) continue;
+
+            const targetParentId = b.containerId
+              ? containerMap.get(b.containerId) || "1"
+              : "1";
+            const title = b.name || b.title || b.url;
+
+            await chrome.bookmarks.create({
+              parentId: targetParentId,
+              title: title,
+              url: b.url,
+            });
+          }
+        }
+
+        await loadBookmarks();
+        alert("Favoritos importados e sincronizados com o navegador com sucesso! 🎉");
+      } catch (err) {
+        console.error("Erro na importação:", err);
+        alert("Erro ao importar o arquivo de backup.");
+      } finally {
+        if (e.target) e.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const openAddBookmark = (containerId: string) => {
     setEditingBookmark(null);
     setActiveContainerId(containerId);
@@ -532,11 +694,53 @@ function App() {
                     />
                     <span>Alterar Layout</span>
                   </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <div
+                      className="w-6 h-6 flex items-center justify-center"
+                      dangerouslySetInnerHTML={{ __html: svgs.importSVG }}
+                    />
+                    <span>Importar Backup</span>
+                  </button>
+                  <button
+                    onClick={handleExport}
+                    className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <div
+                      className="w-6 h-6 flex items-center justify-center"
+                      dangerouslySetInnerHTML={{ __html: svgs.exportSVG }}
+                    />
+                    <span>Exportar Backup</span>
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="hidden sm:block text-gray-600 bg-white hover:bg-white/70 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 p-3 shadow-sm rounded-full transition-all"
+            title="Importar Backup para o Navegador"
+          >
+            <div dangerouslySetInnerHTML={{ __html: svgs.importSVG }} />
+          </button>
+          <button
+            onClick={handleExport}
+            className="hidden sm:block text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 dark:hover:bg-gray-700 hover:bg-white/70 p-3 shadow-sm rounded-full transition-all"
+            title="Exportar Backup dos Favoritos"
+          >
+            <div dangerouslySetInnerHTML={{ __html: svgs.exportSVG }} />
+          </button>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImport}
+            className="hidden"
+            accept=".json"
+          />
         </div>
       </nav>
 
