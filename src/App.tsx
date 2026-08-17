@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import type { Bookmark, Container, Article, Layout, Theme } from "./types";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
+import type { Bookmark, Container, Layout, Theme } from "./types";
 import { STORAGE_KEYS } from "./types";
 import { searchEngines, searchOptions } from "./searchEngines";
 import type { SearchEngineKey } from "./searchEngines";
@@ -15,10 +17,7 @@ function App() {
     const saved = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
     return saved ? JSON.parse(saved) : [];
   });
-  const [articles, setArticles] = useState<Article[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ARTICLES);
-    return saved ? JSON.parse(saved) : [];
-  });
+
   const [activeSearchEngine, setActiveSearchEngine] = useState<SearchEngineKey>(
     () => {
       const saved = localStorage.getItem(STORAGE_KEYS.SEARCH_ENGINE);
@@ -37,6 +36,43 @@ function App() {
   const [isEngineOptionsOpen, setIsEngineOptionsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    setBookmarks((prev) => {
+      const newBookmarks = [...prev];
+      const itemIndex = newBookmarks.findIndex((b) => b.id === draggableId);
+      if (itemIndex === -1) return prev;
+      
+      const [movedItem] = newBookmarks.splice(itemIndex, 1);
+      if (!movedItem) return prev;
+      
+      if (source.droppableId !== destination.droppableId) {
+        movedItem.containerId = destination.droppableId;
+      }
+      
+      const destItems = newBookmarks.filter(b => b.containerId === destination.droppableId);
+      destItems.splice(destination.index, 0, movedItem);
+      
+      const otherItems = newBookmarks.filter(b => b.containerId !== destination.droppableId);
+      return [...otherItems, ...destItems];
+    });
+  };
+
+  const handleBookmarkClick = (id: string) => {
+    setBookmarks((prev) => {
+      const newBookmarks = prev.map((b) =>
+        b.id === id ? { ...b, clicks: (b.clicks || 0) + 1 } : b
+      );
+      localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(newBookmarks));
+      return newBookmarks;
+    });
+  };
+
+
   // Modal states
   const [isBookmarkDialogOpen, setIsBookmarkDialogOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
@@ -45,12 +81,14 @@ function App() {
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+
 
   // Save data
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CONTAINERS, JSON.stringify(containers));
     localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
-    localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(articles));
     localStorage.setItem(STORAGE_KEYS.SEARCH_ENGINE, activeSearchEngine);
     localStorage.setItem(STORAGE_KEYS.LAYOUT, currentLayout);
     localStorage.setItem(STORAGE_KEYS.THEME, currentTheme);
@@ -63,7 +101,6 @@ function App() {
   }, [
     containers,
     bookmarks,
-    articles,
     activeSearchEngine,
     currentLayout,
     currentTheme,
@@ -84,8 +121,7 @@ function App() {
         !(document.activeElement instanceof HTMLInputElement) &&
         !(document.activeElement instanceof HTMLTextAreaElement)
       ) {
-        const searchBar = document.getElementById("web-search-bar");
-        searchBar?.focus();
+        searchInputRef.current?.focus();
       }
     };
 
@@ -100,12 +136,17 @@ function App() {
       setSearchTerm("");
     }
     if (e.key === "Tab") {
-      if (searchTerm && searchResultsRef.current) {
-        const firstLink = searchResultsRef.current.querySelector("a");
-        if (firstLink) {
-          e.preventDefault();
-          firstLink.focus();
-        }
+      if (searchTerm) {
+        e.preventDefault(); // Always prevent default tab behavior when results are present
+        // Use requestAnimationFrame to wait for the next paint frame, ensuring DOM is ready
+        requestAnimationFrame(() => {
+          if (searchResultsRef.current) {
+            const firstLink = searchResultsRef.current.querySelector("a");
+            if (firstLink) {
+              firstLink.focus();
+            }
+          }
+        });
       }
     }
     if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -142,7 +183,7 @@ function App() {
       links[nextIndex]?.focus();
     } else if (e.key === "Escape") {
       setSearchTerm("");
-      document.getElementById("web-search-bar")?.focus();
+      searchInputRef.current?.focus();
     }
   };
 
@@ -158,7 +199,7 @@ function App() {
       if (!/^https?:\/\//i.test(url)) {
         url = "https://" + url;
       }
-      window.location.href = url;
+      window.open(url, "_self");
       return;
     }
 
@@ -179,13 +220,13 @@ function App() {
           query,
         )}&op=translate`;
       }
-      window.location.href = url;
+      window.open(url, "_self");
       return;
     }
 
     const engine = searchEngines[activeSearchEngine];
     const fixedQuery = encodeURIComponent(query).replace(/%20/g, "+");
-    window.location.href = `${engine.url}${fixedQuery}`;
+    window.open(`${engine.url}${fixedQuery}`, "_self");
   };
 
   const handleSearchButtonMouseDown = (e: React.MouseEvent) => {
@@ -196,32 +237,11 @@ function App() {
       if (query) {
         const engine = searchEngines[activeSearchEngine];
         const fixedQuery = encodeURIComponent(query).replace(/%20/g, "+");
-        window.open(`${engine.url}${fixedQuery}`, "_blank");
+        window.open(`${engine.url}${fixedQuery}`, "_self");
       }
     }
   };
 
-  const handleAddArticle = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const url = (formData.get("article-url") as string)?.trim();
-    if (!url) return;
-
-    const newArticle: Article = {
-      id: crypto.randomUUID(),
-      title: url, // Simplified: uses URL as title initially
-      description: "Artigo salvo para ler depois",
-      url,
-      dateAdded: Date.now(),
-    };
-
-    setArticles((prev) => [...prev, newArticle]);
-    e.currentTarget.reset();
-  };
-
-  const deleteArticle = (id: string) => {
-    setArticles((prev) => prev.filter((a) => a.id !== id));
-  };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,7 +253,6 @@ function App() {
         const data = JSON.parse(event.target?.result as string);
         if (data.containers) setContainers(data.containers);
         if (data.bookmarks) setBookmarks(data.bookmarks);
-        if (data.articles) setArticles(data.articles);
       } catch {
         alert("Erro ao importar arquivo JSON.");
       }
@@ -242,7 +261,7 @@ function App() {
   };
 
   const handleExport = () => {
-    const data = { containers, bookmarks, articles };
+    const data = { containers, bookmarks };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
     });
@@ -343,13 +362,13 @@ function App() {
       )
     : [];
 
-  const filteredArticles = searchTerm
-    ? articles.filter((a) =>
-        a.title.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    : [];
-
   const engine = searchEngines[activeSearchEngine];
+
+  const manualTopSites = bookmarks.filter((b) => b.containerId === "top-sites");
+  const automaticTopSites = bookmarks
+    .filter((b) => b.containerId !== "top-sites" && (b.clicks || 0) > 0)
+    .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
+    .slice(0, Math.max(0, 10 - manualTopSites.length));
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col min-h-screen transition-colors duration-300 font-['Poppins']">
@@ -413,6 +432,7 @@ function App() {
               )}
             </div>
             <input
+              ref={searchInputRef}
               id="web-search-bar"
               type="search"
               value={searchTerm}
@@ -524,7 +544,7 @@ function App() {
               <div dangerouslySetInnerHTML={{ __html: svgs.tabKeySVG }} />
             </div>
             <div className="flex flex-col gap-1">
-              {filteredBookmarks.length > 0 || filteredArticles.length > 0 ? (
+              {filteredBookmarks.length > 0 ? (
                 <>
                   {filteredBookmarks.map((bookmark) => (
                     <BookmarkItem
@@ -532,13 +552,7 @@ function App() {
                       bookmark={bookmark}
                       layout="list"
                       onEdit={() => openEditBookmark(bookmark)}
-                    />
-                  ))}
-                  {filteredArticles.map((article) => (
-                    <ArticleItem
-                      key={article.id}
-                      article={article}
-                      onDelete={() => deleteArticle(article.id)}
+                      onClickBookmark={handleBookmarkClick}
                     />
                   ))}
                 </>
@@ -554,6 +568,15 @@ function App() {
                     <a
                       key={option.name}
                       href={`${option.url}${encodeURIComponent(searchTerm)}`}
+                      onMouseDown={(e) => {
+                        if (e.button === 1) {
+                          e.preventDefault();
+                          window.open(
+                            `${option.url}${encodeURIComponent(searchTerm)}`,
+                            "_blank",
+                          );
+                        }
+                      }}
                       className="flex items-center gap-3 my-1 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
                       <div dangerouslySetInnerHTML={{ __html: option.icon }} />
@@ -570,80 +593,152 @@ function App() {
       )}
 
       {!searchTerm && (
-        <section className="container mx-auto p-4 md:p-8 max-w-7xl flex-grow">
-          <div
-            className={`grid ${currentLayout === "grid" ? "lg:grid-cols-3 md:grid-cols-2 grid-cols-1" : "lg:grid-cols-4 md:grid-cols-3 grid-cols-2"}  gap-6`}
-          >
-            {containers.map((container) => (
-              <div
-                key={container.id}
-                className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md relative group/category transition-all"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h2
-                    className="text-xl font-bold text-gray-800 dark:text-gray-200 cursor-pointer flex-grow"
-                    onClick={() =>
-                      renameContainer(container.id, container.title)
-                    }
+        <DragDropContext onDragEnd={onDragEnd}>
+          <section className="container mx-auto p-4 md:p-8 max-w-7xl flex-grow">
+            
+            {/* Top Sites Container */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6 relative transition-all w-full col-span-full">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                  Mais Acessados
+                </h2>
+              </div>
+              <Droppable droppableId="top-sites" direction="horizontal">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="flex flex-wrap gap-2 min-h-[50px]"
                   >
-                    {container.title}
-                  </h2>
-                  <button
-                    onClick={() =>
-                      deleteContainer(container.id, container.title)
-                    }
-                    className="absolute top-3 right-3 w-7 h-7 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center text-lg opacity-0 group-hover/category:opacity-100 transition-all duration-200 hover:bg-red-500 hover:text-white"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div
-                  className={
-                    currentLayout === "grid"
-                      ? "flex flex-wrap gap-2"
-                      : "flex flex-col gap-1"
-                  }
-                >
-                  {bookmarks
-                    .filter((b) => b.containerId === container.id)
-                    .map((bookmark) => (
+                    {/* Automatic Sites (Not Draggable) */}
+                    {automaticTopSites.map((bookmark) => (
                       <BookmarkItem
                         key={bookmark.id}
                         bookmark={bookmark}
-                        layout={currentLayout}
+                        layout="grid"
                         onEdit={() => openEditBookmark(bookmark)}
+                        onClickBookmark={handleBookmarkClick}
                       />
                     ))}
-                  <button
-                    onClick={() => openAddBookmark(container.id)}
-                    className={`flex p-2 items-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300
-                      ${currentLayout === "grid" ? "flex-col justify-center" : ""}
-                      ${bookmarks.some((b) => b.containerId === container.id) ? "opacity-0 group-hover/category:opacity-100" : "opacity-100"}`}
-                  >
-                    {currentLayout === "list" ? (
-                      <>
-                        <span
-                          className="mr-2"
-                          dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }}
-                        />
-                        <span className="text-sm">Adicionar</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: svgs.addIconSVG,
-                            }}
+                    
+                    {/* Manual Sites (Draggable) */}
+                    {manualTopSites.map((bookmark, index) => (
+                      <Draggable key={bookmark.id} draggableId={bookmark.id} index={index}>
+                        {(provided, snapshot) => (
+                          <BookmarkItem
+                            bookmark={bookmark}
+                            layout="grid"
+                            onEdit={() => openEditBookmark(bookmark)}
+                            onClickBookmark={handleBookmarkClick}
+                            provided={provided}
+                            snapshot={snapshot}
                           />
-                        </div>
-                        <span className="mt-2 text-sm">Adicionar</span>
-                      </>
+                        )}
+                      </Draggable>
+                    ))}
+                    
+                    {provided.placeholder}
+                    <button
+                      onClick={() => openAddBookmark("top-sites")}
+                      className={`flex p-2 items-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300 flex-col justify-center w-20 ${(manualTopSites.length + automaticTopSites.length > 0) ? "opacity-0 hover:opacity-100" : ""}`}
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
+                        <div dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }} />
+                      </div>
+                      <span className="mt-2 text-sm">Adicionar</span>
+                    </button>
+                  </div>
+                )}
+              </Droppable>
+            </div>
+
+            <div
+              className={`grid ${currentLayout === "grid" ? "lg:grid-cols-3 md:grid-cols-2 grid-cols-1" : "lg:grid-cols-4 md:grid-cols-3 grid-cols-2"}  gap-6`}
+            >
+              {containers.map((container) => (
+                <div
+                  key={container.id}
+                  className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md relative group/category transition-all"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h2
+                      className="text-xl font-bold text-gray-800 dark:text-gray-200 cursor-pointer flex-grow"
+                      onClick={() =>
+                        renameContainer(container.id, container.title)
+                      }
+                    >
+                      {container.title}
+                    </h2>
+                    <button
+                      onClick={() =>
+                        deleteContainer(container.id, container.title)
+                      }
+                      className="absolute top-3 right-3 w-7 h-7 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center text-lg opacity-0 group-hover/category:opacity-100 transition-all duration-200 hover:bg-red-500 hover:text-white"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  
+                  <Droppable droppableId={container.id} direction={currentLayout === "grid" ? "horizontal" : "vertical"}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={
+                          currentLayout === "grid"
+                            ? "flex flex-wrap gap-2 min-h-[50px]"
+                            : "flex flex-col gap-1 min-h-[50px]"
+                        }
+                      >
+                        {bookmarks
+                          .filter((b) => b.containerId === container.id)
+                          .map((bookmark, index) => (
+                            <Draggable key={bookmark.id} draggableId={bookmark.id} index={index}>
+                              {(provided, snapshot) => (
+                                <BookmarkItem
+                                  bookmark={bookmark}
+                                  layout={currentLayout}
+                                  onEdit={() => openEditBookmark(bookmark)}
+                                  onClickBookmark={handleBookmarkClick}
+                                  provided={provided}
+                                  snapshot={snapshot}
+                                />
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        <button
+                          onClick={() => openAddBookmark(container.id)}
+                          className={`flex p-2 items-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300
+                            ${currentLayout === "grid" ? "flex-col justify-center w-20" : "w-full"}
+                            ${bookmarks.some((b) => b.containerId === container.id) ? "opacity-0 group-hover/category:opacity-100" : "opacity-100"}`}
+                        >
+                          {currentLayout === "list" ? (
+                            <>
+                              <span
+                                className="mr-2"
+                                dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }}
+                              />
+                              <span className="text-sm">Adicionar</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
+                                <div
+                                  dangerouslySetInnerHTML={{
+                                    __html: svgs.addIconSVG,
+                                  }}
+                                />
+                              </div>
+                              <span className="mt-2 text-sm">Adicionar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     )}
-                  </button>
+                  </Droppable>
                 </div>
-              </div>
-            ))}
+              ))}
             <div
               onClick={addContainer}
               className="cursor-pointer bg-white/50 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-600 px-8 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center justify-center min-h-[148px]"
@@ -653,39 +748,8 @@ function App() {
               </h2>
             </div>
           </div>
-
-          <div id="articles-section" className="mt-12">
-            <div className="rounded-lg my-6">
-              <form
-                onSubmit={handleAddArticle}
-                className="flex gap-3 flex-wrap"
-              >
-                <input
-                  type="url"
-                  name="article-url"
-                  placeholder="Adicione artigos colando o URL do artigo aqui..."
-                  required
-                  className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-200"
-                />
-                <button
-                  type="submit"
-                  className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-colors font-medium"
-                >
-                  Salvar Artigo
-                </button>
-              </form>
-            </div>
-            <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-6">
-              {articles.map((article) => (
-                <ArticleItem
-                  key={article.id}
-                  article={article}
-                  onDelete={() => deleteArticle(article.id)}
-                />
-              ))}
-            </div>
-          </div>
         </section>
+        </DragDropContext>
       )}
 
       {isBookmarkDialogOpen && (
@@ -771,20 +835,41 @@ function BookmarkItem({
   bookmark,
   layout,
   onEdit,
+  onClickBookmark,
+  provided,
+  snapshot,
 }: {
   bookmark: Bookmark;
   layout: Layout;
   onEdit: () => void;
+  onClickBookmark?: (id: string) => void;
+  provided?: any;
+  snapshot?: any;
 }) {
   const faviconUrl = extractFaviconFromURL(bookmark.url);
 
+  const handleClick = () => {
+    if (onClickBookmark) onClickBookmark(bookmark.id);
+  };
+
   if (layout === "list") {
     return (
-      <div className="relative flex items-center group/item p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50">
+      <div 
+        ref={provided?.innerRef}
+        {...provided?.draggableProps}
+        {...provided?.dragHandleProps}
+        className={`relative flex items-center group/item p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 ${snapshot?.isDragging ? 'opacity-70 bg-gray-200 dark:bg-gray-700 shadow-lg' : ''}`}
+      >
         <a
           href={bookmark.url}
-          target="_blank"
-          rel="noopener noreferrer"
+          onClick={handleClick}
+          onMouseDown={(e) => {
+            if (e.button === 1) {
+              e.preventDefault();
+              handleClick();
+              window.open(bookmark.url, "_blank");
+            }
+          }}
           className="flex items-center flex-grow"
           title={bookmark.description || ""}
         >
@@ -810,11 +895,22 @@ function BookmarkItem({
   }
 
   return (
-    <div className="relative flex flex-col items-center group/item w-20 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors duration-200">
+    <div 
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      {...provided?.dragHandleProps}
+      className={`relative flex flex-col items-center group/item w-20 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-all duration-200 ${snapshot?.isDragging ? 'opacity-70 bg-gray-200 dark:bg-gray-700 shadow-xl scale-105 z-10' : ''}`}
+    >
       <a
         href={bookmark.url}
-        target="_blank"
-        rel="noopener noreferrer"
+        onClick={handleClick}
+        onMouseDown={(e) => {
+          if (e.button === 1) {
+            e.preventDefault();
+            handleClick();
+            window.open(bookmark.url, "_blank");
+          }
+        }}
         className="flex flex-col items-center p-2"
         title={bookmark.description || ""}
       >
@@ -837,46 +933,6 @@ function BookmarkItem({
   );
 }
 
-function ArticleItem({
-  article,
-  onDelete,
-}: {
-  article: Article;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow group relative">
-      <div className="flex flex-col h-full">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 line-clamp-2">
-          {article.title}
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 flex-grow">
-          {article.description}
-        </p>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500 dark:text-gray-500">
-            {new Date(article.dateAdded).toLocaleDateString("pt-BR")}
-          </span>
-          <div className="flex gap-2">
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
-            >
-              Ler
-            </a>
-            <button
-              onClick={onDelete}
-              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-blue-300 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              Remover
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 export default App;
