@@ -11,6 +11,7 @@ import { ContainerCard } from "./components/ContainerCard";
 import { TopSites } from "./components/TopSites";
 import { SearchResults } from "./components/SearchResults";
 import { Header } from "./components/Header";
+import { TrendingStreams } from "./components/Gadgets/TrendingStreams";
 
 function App() {
   const [dialog, setDialog] = useState<DialogConfig>({
@@ -925,6 +926,8 @@ function App() {
               onClickBookmark={handleBookmarkClick}
               openAddBookmark={openAddBookmark}
             />
+
+            <TrendingStreams />
 
             <div
               className={`grid ${currentLayout === "grid" ? "lg:grid-cols-3 md:grid-cols-2 grid-cols-1" : "lg:grid-cols-4 md:grid-cols-3 grid-cols-2"}  gap-6`}
