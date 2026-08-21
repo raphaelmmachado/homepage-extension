@@ -8,9 +8,93 @@ import type { SearchEngineKey } from "./searchEngines";
 import { extractFaviconFromURL } from "./helpers";
 import * as svgs from "./svgs";
 
+type DialogConfig = {
+  isOpen: boolean;
+  type: 'alert' | 'confirm' | 'prompt';
+  title: string;
+  message: string;
+  defaultValue?: string;
+  onConfirm?: (value?: string) => void;
+  onCancel?: () => void;
+};
+
+const CustomDialog = ({ dialog }: { dialog: DialogConfig }) => {
+  if (!dialog.isOpen) return null;
+  const isPrompt = dialog.type === 'prompt';
+  const isConfirm = dialog.type === 'confirm';
+  const [inputValue, setInputValue] = useState(dialog.defaultValue || '');
+
+  // Reset inputValue when dialog opens
+  useEffect(() => {
+    if (dialog.isOpen) {
+      setInputValue(dialog.defaultValue || '');
+    }
+  }, [dialog.isOpen, dialog.defaultValue]);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-3">{dialog.title}</h3>
+        {dialog.message && <p className="text-lg text-gray-600 dark:text-gray-300 mb-5 whitespace-pre-wrap">{dialog.message}</p>}
+        
+        {isPrompt && (
+          <input
+            type="text"
+            autoFocus
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 border-none mb-5 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 text-lg"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') dialog.onConfirm?.(inputValue);
+              if (e.key === 'Escape') dialog.onCancel?.();
+            }}
+          />
+        )}
+
+        <div className="flex justify-end gap-3 mt-6">
+          {(isConfirm || isPrompt) && (
+            <button
+              onClick={() => dialog.onCancel?.()}
+              className="px-5 py-2.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-lg font-medium"
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            onClick={() => dialog.onConfirm?.(isPrompt ? inputValue : undefined)}
+            className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors text-lg font-medium"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
+  const [dialog, setDialog] = useState<DialogConfig>({ isOpen: false, type: 'alert', title: '', message: '' });
+
+  const showDialog = (options: Omit<DialogConfig, 'isOpen' | 'onConfirm' | 'onCancel'>): Promise<any> => {
+    return new Promise((resolve) => {
+      setDialog({
+        ...options,
+        isOpen: true,
+        onConfirm: (val) => {
+          setDialog(prev => ({ ...prev, isOpen: false }));
+          resolve(options.type === 'prompt' ? (val || null) : true);
+        },
+        onCancel: () => {
+          setDialog(prev => ({ ...prev, isOpen: false }));
+          resolve(options.type === 'prompt' ? null : false);
+        }
+      });
+    });
+  };
   const [containers, setContainers] = useState<Container[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [editingContainerId, setEditingContainerId] = useState<string | null>(null);
+  const [editingContainerTitle, setEditingContainerTitle] = useState("");
 
   const loadBookmarks = async () => {
     if (typeof chrome === 'undefined' || !chrome.bookmarks) return;
@@ -355,7 +439,7 @@ function App() {
     if (!file) return;
 
     if (typeof chrome === "undefined" || !chrome.bookmarks) {
-      alert("A importação direta requer que a extensão esteja rodando no navegador.");
+      await showDialog({ type: 'alert', title: 'Aviso', message: "A importação direta requer que a extensão esteja rodando no navegador." });
       return;
     }
 
@@ -364,13 +448,15 @@ function App() {
       try {
         const data = JSON.parse(event.target?.result as string);
         if (!data || (!data.containers && !data.bookmarks)) {
-          alert("Arquivo JSON inválido ou sem favoritos.");
+          await showDialog({ type: 'alert', title: 'Aviso', message: "Arquivo JSON inválido ou sem favoritos." });
           return;
         }
 
-        const confirmImport = confirm(
-          "Deseja importar estes favoritos para o seu navegador?\n\nIsso criará as pastas e links diretamente na sua Barra de Favoritos."
-        );
+        const confirmImport = await showDialog({
+          type: 'confirm',
+          title: 'Importar Favoritos',
+          message: "Deseja importar estes favoritos para o seu navegador?\n\nIsso criará as pastas e links diretamente na sua Barra de Favoritos."
+        });
         if (!confirmImport) return;
 
         // Restaurar contagem de cliques se existirem no backup
@@ -473,10 +559,10 @@ function App() {
         }
 
         await loadBookmarks();
-        alert("Favoritos importados e sincronizados com o navegador com sucesso! 🎉");
+        await showDialog({ type: 'alert', title: 'Sucesso', message: "Favoritos importados e sincronizados com o navegador com sucesso! 🎉" });
       } catch (err) {
         console.error("Erro na importação:", err);
-        alert("Erro ao importar o arquivo de backup.");
+        await showDialog({ type: 'alert', title: 'Erro', message: "Erro ao importar o arquivo de backup." });
       } finally {
         if (e.target) e.target.value = "";
       }
@@ -502,7 +588,7 @@ function App() {
     const url = formData.get("url") as string;
     
     if (typeof chrome === 'undefined' || !chrome.bookmarks) {
-      alert("A integração de favoritos requer que o app rode como extensão do Chrome/Brave.");
+      await showDialog({ type: 'alert', title: 'Aviso', message: "A integração de favoritos requer que o app rode como extensão do Chrome/Brave." });
       setIsBookmarkDialogOpen(false);
       return;
     }
@@ -524,44 +610,85 @@ function App() {
     }
   };
 
-  const addContainer = () => {
-    const title = prompt("Nome da Pasta:");
-    if (title?.trim()) {
+  const addContainer = async () => {
+    const title = await showDialog({ type: 'prompt', title: 'Nova Pasta', message: 'Nome da Pasta:' });
+    if (title && title.trim()) {
       if (typeof chrome !== 'undefined' && chrome.bookmarks) {
-        chrome.bookmarks.create({ parentId: "1", title: title.trim() });
+        await chrome.bookmarks.create({ parentId: "1", title: title.trim() });
+        await loadBookmarks();
       } else {
-        alert("A integração de favoritos requer que o app rode como extensão.");
+        const newId = crypto.randomUUID();
+        setContainers((prev) => [...prev, { id: newId, title: title.trim() }]);
       }
     }
   };
 
-  const deleteContainer = (id: string, title: string) => {
+  const deleteContainer = async (id: string, title: string) => {
     if (id === "1") {
-      alert("Você não pode deletar a Barra de Favoritos.");
+      const confirmClear = await showDialog({
+        type: "confirm",
+        title: "Limpar Favoritos",
+        message: `Deseja remover todos os favoritos soltos da "${title}"?\n\nISSO APAGARÁ DO SEU NAVEGADOR!`,
+      });
+      if (confirmClear) {
+        if (typeof chrome !== "undefined" && chrome.bookmarks) {
+          const loose = bookmarks.filter((b) => b.containerId === "1");
+          for (const b of loose) {
+            try {
+              await chrome.bookmarks.remove(b.id);
+            } catch (err) {
+              console.error("Erro ao remover favorito:", err);
+            }
+          }
+          await loadBookmarks();
+        }
+        setBookmarks((prev) => prev.filter((b) => b.containerId !== "1"));
+        setContainers((prev) => prev.filter((c) => c.id !== "1"));
+      }
       return;
     }
-    if (
-      confirm(
-        `Tem certeza que deseja remover a pasta "${title}" e todos os seus favoritos? ISSO APAGARÁ DO SEU NAVEGADOR!`,
-      )
-    ) {
-      if (typeof chrome !== 'undefined' && chrome.bookmarks) {
-        chrome.bookmarks.removeTree(id);
+
+    const confirmDelete = await showDialog({
+      type: "confirm",
+      title: "Excluir Pasta",
+      message: `Tem certeza que deseja remover a pasta "${title}" e todos os seus favoritos?\n\nISSO APAGARÁ DO SEU NAVEGADOR!`,
+    });
+    if (confirmDelete) {
+      if (typeof chrome !== "undefined" && chrome.bookmarks) {
+        try {
+          await chrome.bookmarks.removeTree(id);
+          await loadBookmarks();
+        } catch (err) {
+          console.error("Erro ao remover pasta de favoritos:", err);
+          await showDialog({
+            type: "alert",
+            title: "Erro",
+            message: "Não foi possível excluir a pasta no navegador.",
+          });
+        }
       }
+      setContainers((prev) => prev.filter((c) => c.id !== id));
+      setBookmarks((prev) => prev.filter((b) => b.containerId !== id));
     }
   };
 
-  const renameContainer = (id: string, oldTitle: string) => {
-    if (id === "1") {
-      alert("Você não pode renomear a Barra de Favoritos.");
-      return;
-    }
-    const newTitle = prompt("Novo nome da pasta:", oldTitle);
-    if (newTitle?.trim()) {
+  const saveContainerTitle = async (id: string) => {
+    if (!editingContainerId) return;
+    const newTitle = editingContainerTitle.trim();
+    if (newTitle && newTitle !== containers.find(c => c.id === id)?.title) {
       if (typeof chrome !== 'undefined' && chrome.bookmarks) {
-        chrome.bookmarks.update(id, { title: newTitle.trim() });
+        try {
+          await chrome.bookmarks.update(id, { title: newTitle });
+          await loadBookmarks();
+        } catch (err) {
+          console.error("Erro ao renomear pasta:", err);
+        }
       }
+      setContainers((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
+      );
     }
+    setEditingContainerId(null);
   };
 
   const filteredBookmarks = searchTerm
@@ -582,7 +709,7 @@ function App() {
   const automaticTopSites = bookmarks
     .filter((b) => b.containerId !== "top-sites" && (b.clicks || 0) > 0)
     .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
-    .slice(0, Math.max(0, 10 - manualTopSites.length));
+    .slice(0, Math.max(0, 14 - manualTopSites.length));
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col min-h-screen transition-colors duration-300 font-['Poppins']">
@@ -872,22 +999,46 @@ function App() {
               {containers.map((container) => (
                 <div
                   key={container.id}
-                  className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md relative group/category transition-all"
+                  className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md relative group transition-all"
                 >
                   <div className="flex justify-between items-center mb-4">
-                    <h2
-                      className="text-xl font-bold text-gray-800 dark:text-gray-200 cursor-pointer flex-grow"
-                      onClick={() =>
-                        renameContainer(container.id, container.title)
-                      }
-                    >
-                      {container.title}
-                    </h2>
+                    {editingContainerId === container.id ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        className="text-xl font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 flex-grow outline-none focus:ring-2 focus:ring-blue-500 w-full mr-8"
+                        value={editingContainerTitle}
+                        onChange={(e) => setEditingContainerTitle(e.target.value)}
+                        onBlur={() => saveContainerTitle(container.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveContainerTitle(container.id);
+                          if (e.key === "Escape") setEditingContainerId(null);
+                        }}
+                      />
+                    ) : (
+                      <h2
+                        className="text-xl font-bold text-gray-800 dark:text-gray-200 flex-grow cursor-pointer pr-8"
+                        onClick={() => {
+                          if (container.id !== "1") {
+                            setEditingContainerId(container.id);
+                            setEditingContainerTitle(container.title);
+                          } else {
+                            showDialog({ type: 'alert', title: 'Aviso', message: "A Barra de Favoritos padrão do navegador não pode ser renomeada." });
+                          }
+                        }}
+                        title={container.id !== "1" ? "Clique para renomear" : ""}
+                      >
+                        {container.title}
+                      </h2>
+                    )}
                     <button
-                      onClick={() =>
-                        deleteContainer(container.id, container.title)
-                      }
-                      className="absolute top-3 right-3 w-7 h-7 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center text-lg opacity-0 group-hover/category:opacity-100 transition-all duration-200 hover:bg-red-500 hover:text-white"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteContainer(container.id, container.title);
+                      }}
+                      className="absolute top-3 right-3 w-7 h-7 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center text-lg opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-all duration-200 hover:bg-red-500 hover:text-white cursor-pointer z-10"
+                      title="Excluir Pasta"
                     >
                       &times;
                     </button>
@@ -965,6 +1116,8 @@ function App() {
         </section>
         </DragDropContext>
       )}
+
+      <CustomDialog dialog={dialog} />
 
       {isBookmarkDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
