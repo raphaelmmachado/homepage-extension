@@ -13,7 +13,9 @@ interface NextMatch {
 
 interface KnockoutLeg {
   homeTeam: string;
+  homeTeamId?: number;
   awayTeam: string;
+  awayTeamId?: number;
   homeScore?: number;
   awayScore?: number;
   scoreDisplay: string;
@@ -29,6 +31,7 @@ interface Championship {
   color: string;
   standings?: {
     position: number;
+    teamId?: number;
     teamName: string;
     points: number;
     matches: number;
@@ -36,7 +39,9 @@ interface Championship {
   }[];
   knockout?: {
     opponent: string;
+    opponentId?: number;
     phaseName: string;
+    outcome?: "champion" | "runner_up" | "eliminated" | "qualified" | "in_progress";
     matches: KnockoutLeg[];
   };
 }
@@ -57,10 +62,12 @@ interface ExtractedMatch {
   homeScore?: {
     display?: number;
     current?: number;
+    penalties?: number;
   };
   awayScore?: {
     display?: number;
     current?: number;
+    penalties?: number;
   };
   status?: {
     type?: string;
@@ -102,17 +109,10 @@ const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     color: "bg-green-600",
   },
   {
-    id: "tourn_386",
-    name: "Carioca",
-    status: "Carregando...",
-    phase: "Taça Guanabara",
-    color: "bg-blue-600",
-  },
-  {
     id: "tourn_384",
     name: "Libertadores",
     status: "Carregando...",
-    phase: "Fase de Grupos",
+    phase: "Fase Eliminatória",
     color: "bg-yellow-600",
   },
   {
@@ -122,17 +122,25 @@ const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     phase: "Mata-mata",
     color: "bg-purple-600",
   },
+  {
+    id: "tourn_386",
+    name: "Carioca",
+    status: "Carregando...",
+    phase: "Encerrado",
+    color: "bg-blue-600",
+  },
 ];
 
 const SOFASCORE_TEAM_ID = 5981; // ID Oficial do Flamengo no Sofascore
-const CACHE_KEY = "my-homepage-flamengo-sofascore-v4";
+const CACHE_KEY = "my-homepage-flamengo-sofascore-v5";
 const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 horas de cache
 
+// Campeonato Carioca ordenado por último
 const TOURNAMENTS_CONFIG = [
   { id: 325, name: "Brasileirão", isLeague: true },
-  { id: 386, name: "Carioca", isLeague: false },
   { id: 384, name: "Libertadores", isLeague: false },
   { id: 373, name: "Copa do Brasil", isLeague: false },
+  { id: 386, name: "Carioca", isLeague: false },
 ];
 
 /**
@@ -145,7 +153,6 @@ function extractMatchesRecursively(data: any): ExtractedMatch[] {
   function traverse(node: any) {
     if (!node || typeof node !== "object") return;
 
-    // Detecta se o nó é um evento de partida válido
     if (node.homeTeam?.id && node.awayTeam?.id && (node.startTimestamp || node.id)) {
       const matchId = `${node.id || ""}-${node.startTimestamp || ""}-${node.homeTeam.id}-${node.awayTeam.id}`;
       if (!seenIds.has(matchId)) {
@@ -192,6 +199,96 @@ function translatePhaseName(name?: string): string {
   return name;
 }
 
+/**
+ * Avalia se o time foi Campeão, Vice, Eliminado ou Classificado em um mata-mata
+ */
+function evaluateKnockoutStatus(
+  legs: ExtractedMatch[],
+  phaseName: string
+): { outcome: "champion" | "runner_up" | "eliminated" | "qualified" | "in_progress"; label: string; badgeColor: string } {
+  if (legs.length === 0) {
+    return { outcome: "in_progress", label: "Em Disputa", badgeColor: "bg-purple-600" };
+  }
+
+  const allFinished = legs.every(
+    (m) => m.status?.type === "finished" || m.status?.type === "ended"
+  );
+  const hasUpcoming = legs.some((m) => m.status?.type === "notstarted");
+
+  const isFinal =
+    phaseName.toLowerCase().includes("final") &&
+    !phaseName.toLowerCase().includes("semi") &&
+    !phaseName.toLowerCase().includes("quartas") &&
+    !phaseName.toLowerCase().includes("oitavas");
+
+  // Se ainda há jogo a ser disputado nessa fase (ex: 2º jogo da volta)
+  if (hasUpcoming || !allFinished) {
+    return {
+      outcome: "in_progress",
+      label: isFinal ? "Final (Em Disputa)" : `${phaseName} (Em Andamento)`,
+      badgeColor: "bg-purple-600",
+    };
+  }
+
+  // Se todos os jogos da fase acabaram, calcula o placar agregado e pênaltis
+  let flaGoals = 0;
+  let oppGoals = 0;
+  let flaPenalties = 0;
+  let oppPenalties = 0;
+  let hasPenalties = false;
+
+  for (const m of legs) {
+    const isHome = m.homeTeam?.id === SOFASCORE_TEAM_ID;
+    const hScore = m.homeScore?.display ?? m.homeScore?.current ?? 0;
+    const aScore = m.awayScore?.display ?? m.awayScore?.current ?? 0;
+
+    if (isHome) {
+      flaGoals += hScore;
+      oppGoals += aScore;
+      if (m.homeScore?.penalties !== undefined && m.awayScore?.penalties !== undefined) {
+        hasPenalties = true;
+        flaPenalties = m.homeScore.penalties;
+        oppPenalties = m.awayScore.penalties;
+      }
+    } else {
+      flaGoals += aScore;
+      oppGoals += hScore;
+      if (m.awayScore?.penalties !== undefined && m.homeScore?.penalties !== undefined) {
+        hasPenalties = true;
+        flaPenalties = m.awayScore.penalties;
+        oppPenalties = m.homeScore.penalties;
+      }
+    }
+  }
+
+  let flaWon = false;
+  if (flaGoals > oppGoals) {
+    flaWon = true;
+  } else if (flaGoals === oppGoals) {
+    if (hasPenalties) {
+      flaWon = flaPenalties > oppPenalties;
+    } else {
+      if (legs.length === 1 && !isFinal) {
+        return { outcome: "in_progress", label: `${phaseName} (1º Jogo)`, badgeColor: "bg-purple-600" };
+      }
+    }
+  }
+
+  if (flaWon) {
+    if (isFinal) {
+      return { outcome: "champion", label: "🏆 Campeão!", badgeColor: "bg-amber-500 text-gray-900 font-extrabold" };
+    } else {
+      return { outcome: "qualified", label: `✅ Classificado (${phaseName})`, badgeColor: "bg-emerald-600 text-white font-bold" };
+    }
+  } else {
+    if (isFinal) {
+      return { outcome: "runner_up", label: `🥈 Vice-Campeão`, badgeColor: "bg-gray-500 text-white font-bold" };
+    } else {
+      return { outcome: "eliminated", label: `❌ Eliminado (${phaseName})`, badgeColor: "bg-rose-600 text-white font-bold" };
+    }
+  }
+}
+
 export function FlamengoStatus() {
   const [activeTab, setActiveTab] = useState<string>("tourn_325");
   const [loading, setLoading] = useState(false);
@@ -229,7 +326,7 @@ export function FlamengoStatus() {
       try {
         const [lastRes, nextRes] = await Promise.all([
           fetch(`https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/last/0`),
-          fetch(`https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/next/0`)
+          fetch(`https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/next/0`),
         ]);
 
         const lastData = lastRes.ok ? await lastRes.json() : {};
@@ -237,7 +334,7 @@ export function FlamengoStatus() {
 
         allTeamEvents = [
           ...(lastData.events || []),
-          ...(nextData.events || [])
+          ...(nextData.events || []),
         ];
 
         // 1.1 Próximo Jogo Geral
@@ -314,9 +411,10 @@ export function FlamengoStatus() {
                   }
 
                   // Complementa com eventos diretos do time nesta competição
-                  const directEvents = allTeamEvents.filter((ev: any) => 
-                    ev.tournament?.uniqueTournament?.id === tourn.id ||
-                    ev.season?.id === latestSeason.id
+                  const directEvents = allTeamEvents.filter(
+                    (ev: any) =>
+                      ev.tournament?.uniqueTournament?.id === tourn.id ||
+                      ev.season?.id === latestSeason.id,
                   );
 
                   const combinedMatches = [...cupMatches, ...directEvents];
@@ -330,24 +428,29 @@ export function FlamengoStatus() {
 
                   if (flaCupMatches.length > 0) {
                     // Ordena por data (mais recente primeiro)
-                    flaCupMatches.sort((a, b) => (b.startTimestamp || 0) - (a.startTimestamp || 0));
-                    
+                    flaCupMatches.sort(
+                      (a, b) => (b.startTimestamp || 0) - (a.startTimestamp || 0),
+                    );
+
                     const latestMatch = flaCupMatches[0]!;
                     const oppTeam =
                       latestMatch.homeTeam?.id === SOFASCORE_TEAM_ID
                         ? latestMatch.awayTeam
                         : latestMatch.homeTeam;
                     const opponentId = oppTeam?.id;
-                    const opponentName = oppTeam?.shortName || oppTeam?.name || "Adversário";
+                    const opponentName =
+                      oppTeam?.shortName || oppTeam?.name || "Adversário";
 
                     // Pega todas as partidas contra este adversário nesta fase (Ida e Volta)
                     const roundMatches = flaCupMatches.filter(
                       (e) =>
-                        (e.homeTeam?.id === opponentId && e.awayTeam?.id === SOFASCORE_TEAM_ID) ||
-                        (e.awayTeam?.id === opponentId && e.homeTeam?.id === SOFASCORE_TEAM_ID),
+                        (e.homeTeam?.id === opponentId &&
+                          e.awayTeam?.id === SOFASCORE_TEAM_ID) ||
+                        (e.awayTeam?.id === opponentId &&
+                          e.homeTeam?.id === SOFASCORE_TEAM_ID),
                     );
 
-                    // Remove possíveis duplicatas de ID
+                    // Remove duplicatas
                     const uniqueLegs: ExtractedMatch[] = [];
                     const seen = new Set<string>();
                     for (const m of roundMatches) {
@@ -359,28 +462,44 @@ export function FlamengoStatus() {
                     }
 
                     // Ordena cronologicamente (1º jogo, 2º jogo)
-                    uniqueLegs.sort((a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0));
+                    uniqueLegs.sort(
+                      (a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0),
+                    );
 
                     const phaseTitle = translatePhaseName(latestMatch.roundInfo?.name);
+                    const evalResult = evaluateKnockoutStatus(uniqueLegs, phaseTitle);
 
                     builtChamp = {
                       id: `tourn_${tourn.id}`,
                       name: tourn.name,
-                      status: `vs ${opponentName}`,
+                      status: evalResult.label,
                       phase: phaseTitle,
-                      color: "bg-purple-600",
+                      color: evalResult.badgeColor,
                       knockout: {
                         opponent: opponentName,
+                        opponentId,
                         phaseName: phaseTitle,
+                        outcome: evalResult.outcome,
                         matches: uniqueLegs.map((m) => {
-                          const homeScore = m.homeScore?.display ?? m.homeScore?.current;
-                          const awayScore = m.awayScore?.display ?? m.awayScore?.current;
-                          const isFinished = m.status?.type === "finished" || m.status?.type === "ended";
+                          const homeScore =
+                            m.homeScore?.display ?? m.homeScore?.current;
+                          const awayScore =
+                            m.awayScore?.display ?? m.awayScore?.current;
+                          const isFinished =
+                            m.status?.type === "finished" ||
+                            m.status?.type === "ended";
                           const isInProgress = m.status?.type === "inprogress";
 
                           let scoreDisplay = "vs";
-                          if (isFinished && homeScore !== undefined && awayScore !== undefined) {
+                          if (
+                            isFinished &&
+                            homeScore !== undefined &&
+                            awayScore !== undefined
+                          ) {
                             scoreDisplay = `${homeScore} - ${awayScore}`;
+                            if (m.homeScore?.penalties !== undefined && m.awayScore?.penalties !== undefined) {
+                              scoreDisplay += ` (${m.homeScore.penalties}x${m.awayScore.penalties} Pen)`;
+                            }
                           } else if (isInProgress) {
                             scoreDisplay = `${homeScore ?? 0} - ${awayScore ?? 0} (Ao Vivo)`;
                           } else if (m.status?.type === "notstarted") {
@@ -396,8 +515,16 @@ export function FlamengoStatus() {
                             : "--/--";
 
                           return {
-                            homeTeam: m.homeTeam?.shortName || m.homeTeam?.name || "Time Casa",
-                            awayTeam: m.awayTeam?.shortName || m.awayTeam?.name || "Time Fora",
+                            homeTeam:
+                              m.homeTeam?.shortName ||
+                              m.homeTeam?.name ||
+                              "Time Casa",
+                            homeTeamId: m.homeTeam?.id,
+                            awayTeam:
+                              m.awayTeam?.shortName ||
+                              m.awayTeam?.name ||
+                              "Time Fora",
+                            awayTeamId: m.awayTeam?.id,
                             homeScore,
                             awayScore,
                             scoreDisplay,
@@ -447,6 +574,7 @@ export function FlamengoStatus() {
                         .slice(startIdx, startIdx + 3)
                         .map((r: StandingsRow) => ({
                           position: r.position,
+                          teamId: r.team?.id,
                           teamName: r.team?.shortName || r.team?.name,
                           points: r.points,
                           matches: r.matches,
@@ -462,10 +590,10 @@ export function FlamengoStatus() {
                           : `${matches} jogos disputados`,
                         color:
                           rank <= 4
-                            ? "bg-green-600"
+                            ? "bg-green-600 text-white"
                             : rank <= 12
-                              ? "bg-blue-600"
-                              : "bg-yellow-600",
+                              ? "bg-blue-600 text-white"
+                              : "bg-yellow-600 text-white",
                         standings: miniTable,
                       };
                       break;
@@ -482,7 +610,7 @@ export function FlamengoStatus() {
                   name: tourn.name,
                   status: "Em Disputa",
                   phase: latestSeason.name || "Temporada Atual",
-                  color: "bg-blue-600",
+                  color: "bg-blue-600 text-white",
                 });
               }
             }
@@ -730,34 +858,77 @@ export function FlamengoStatus() {
 
             {activeChamp.knockout ? (
               <div className="w-full flex flex-col items-center">
-                {/* Badge do Confronto */}
+                {/* Badge do Status (Campeão, Eliminado, Classificado ou Em Disputa) */}
                 <div className="flex items-center gap-2 mb-3">
                   <span
-                    className={`px-3 py-1 rounded-full text-white font-bold text-xs shadow-sm ${activeChamp.color}`}
+                    className={`px-3 py-1 rounded-full text-xs shadow-sm ${activeChamp.color}`}
                   >
-                    {activeChamp.knockout.phaseName}
+                    {activeChamp.status}
                   </span>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                    Flamengo vs {activeChamp.knockout.opponent}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200">
+                    <img
+                      src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg"
+                      alt="Flamengo"
+                      className="w-4 h-4 object-contain inline-block shrink-0"
+                    />
+                    <span>Flamengo</span>
+                    <span className="text-xs text-gray-400 font-normal">vs</span>
+                    {activeChamp.knockout.opponentId && (
+                      <img
+                        src={`https://api.sofascore.app/api/v1/team/${activeChamp.knockout.opponentId}/image`}
+                        alt=""
+                        className="w-4 h-4 object-contain inline-block shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    )}
+                    <span>{activeChamp.knockout.opponent}</span>
+                  </div>
                 </div>
 
-                {/* Lista de Jogos (Ida e Volta) */}
+                {/* Lista de Jogos (Ida e Volta) com Escudos */}
                 <div className="w-full max-w-sm space-y-2">
                   {activeChamp.knockout.matches.map((match, i) => (
                     <div
                       key={i}
                       className="flex justify-between items-center bg-white dark:bg-gray-800 p-2.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 text-sm"
                     >
-                      <div className="flex flex-col flex-1">
-                        <span className="text-[10px] uppercase font-bold text-gray-400">
+                      <div className="flex flex-col flex-1 min-w-0 pr-2">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">
                           {i === 0 ? "1º Jogo (Ida)" : i === 1 ? "2º Jogo (Volta)" : `Jogo ${i + 1}`}
                         </span>
-                        <span className="font-medium text-gray-700 dark:text-gray-200 truncate text-xs sm:text-sm">
-                          {match.homeTeam} x {match.awayTeam}
-                        </span>
+                        <div className="flex items-center gap-1 text-xs sm:text-sm truncate">
+                          {match.homeTeamId && (
+                            <img
+                              src={`https://api.sofascore.app/api/v1/team/${match.homeTeamId}/image`}
+                              alt=""
+                              className="w-3.5 h-3.5 object-contain shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          )}
+                          <span className="font-medium text-gray-700 dark:text-gray-200 truncate">
+                            {match.homeTeam}
+                          </span>
+                          <span className="text-gray-400 text-xs">x</span>
+                          {match.awayTeamId && (
+                            <img
+                              src={`https://api.sofascore.app/api/v1/team/${match.awayTeamId}/image`}
+                              alt=""
+                              className="w-3.5 h-3.5 object-contain shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          )}
+                          <span className="font-medium text-gray-700 dark:text-gray-200 truncate">
+                            {match.awayTeam}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-md font-bold text-xs sm:text-sm text-gray-800 dark:text-gray-100 whitespace-nowrap">
                           {match.scoreDisplay}
                         </span>
@@ -773,29 +944,41 @@ export function FlamengoStatus() {
               <div className="w-full max-w-sm">
                 <table className="w-full text-sm text-left">
                   <thead>
-                    <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-600">
-                      <th className="pb-1 font-medium w-8">#</th>
+                    <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-600 text-xs">
+                      <th className="pb-1 font-medium w-7">#</th>
                       <th className="pb-1 font-medium">Time</th>
-                      <th className="pb-1 font-medium text-center">J</th>
-                      <th className="pb-1 font-medium text-center">Pts</th>
+                      <th className="pb-1 font-medium text-center w-8">J</th>
+                      <th className="pb-1 font-medium text-center w-8">Pts</th>
                     </tr>
                   </thead>
                   <tbody>
                     {activeChamp.standings.map((row) => (
                       <tr
-                        key={row.teamName}
+                        key={`${row.teamId}-${row.teamName}`}
                         className={`border-b border-gray-100 dark:border-gray-700 last:border-0 ${
                           row.isFlamengo
                             ? "bg-red-50 dark:bg-red-900/20 font-bold text-gray-900 dark:text-white"
                             : "text-gray-600 dark:text-gray-300"
                         }`}
                       >
-                        <td className="py-2">{row.position}º</td>
-                        <td className="py-2 truncate max-w-[120px]">
-                          {row.teamName}
+                        <td className="py-2 text-xs">{row.position}º</td>
+                        <td className="py-2">
+                          <div className="flex items-center gap-1.5 truncate max-w-[130px] sm:max-w-[160px]">
+                            {row.teamId && (
+                              <img
+                                src={`https://api.sofascore.app/api/v1/team/${row.teamId}/image`}
+                                alt=""
+                                className="w-4 h-4 object-contain shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                            )}
+                            <span className="truncate">{row.teamName}</span>
+                          </div>
                         </td>
-                        <td className="py-2 text-center">{row.matches}</td>
-                        <td className="py-2 text-center">{row.points}</td>
+                        <td className="py-2 text-center text-xs">{row.matches}</td>
+                        <td className="py-2 text-center text-xs font-semibold">{row.points}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -803,7 +986,7 @@ export function FlamengoStatus() {
               </div>
             ) : (
               <div
-                className={`px-6 py-3 rounded-full text-white font-bold text-xl shadow-sm mt-auto mb-auto ${activeChamp.color}`}
+                className={`px-6 py-3 rounded-full font-bold text-base shadow-sm mt-auto mb-auto ${activeChamp.color}`}
               >
                 {activeChamp.status}
               </div>
