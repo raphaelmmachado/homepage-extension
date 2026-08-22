@@ -24,6 +24,7 @@ type Props = {
   handleExport: () => void;
   handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  openGadgetsManager: () => void;
 };
 
 export function Header({
@@ -46,6 +47,7 @@ export function Header({
   handleExport,
   handleImport,
   fileInputRef,
+  openGadgetsManager,
 }: Props) {
   const engine = searchEngines[activeSearchEngine];
 
@@ -72,6 +74,18 @@ export function Header({
           <div
             dangerouslySetInnerHTML={{
               __html: currentLayout === "grid" ? svgs.gridSVG : svgs.listSVG,
+            }}
+          />
+        </button>
+
+        <button
+          onClick={openGadgetsManager}
+          className="hidden sm:block text-gray-600 bg-white hover:bg-white/70 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 shadow-sm p-3 rounded-full transition-all"
+          title="Gerenciar Gadgets"
+        >
+          <div
+            dangerouslySetInnerHTML={{
+              __html: svgs.gadgetsIconSvg,
             }}
           />
         </button>
@@ -158,6 +172,19 @@ export function Header({
                     dangerouslySetInnerHTML={{ __html: svgs.layoutIconSvg }}
                   />
                   <span>Alterar Layout</span>
+                </button>
+                <button
+                  onClick={() => {
+                    openGadgetsManager();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <div
+                    className="w-6 h-6 flex items-center justify-center"
+                    dangerouslySetInnerHTML={{ __html: svgs.gadgetsIconSvg }}
+                  />
+                  <span>Gerenciar Gadgets</span>
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}

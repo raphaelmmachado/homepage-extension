@@ -12,6 +12,12 @@ import { TopSites } from "./components/TopSites";
 import { SearchResults } from "./components/SearchResults";
 import { Header } from "./components/Header";
 import { TrendingStreams } from "./components/Gadgets/TrendingStreams";
+import { FlamengoStatus } from "./components/Gadgets/FlamengoStatus";
+import { GadgetsManager } from "./components/Gadgets/GadgetsManager";
+
+// The Chrome extension API is available at runtime but is not included in the
+// browser's standard TypeScript globals.
+const chrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
 
 function App() {
   const [dialog, setDialog] = useState<DialogConfig>({
@@ -176,6 +182,22 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isEngineOptionsOpen, setIsEngineOptionsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isGadgetsManagerOpen, setIsGadgetsManagerOpen] = useState(false);
+
+  const [visibleGadgets, setVisibleGadgets] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.VISIBLE_GADGETS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const toggleGadget = (id: string) => {
+    setVisibleGadgets(prev => {
+      const newVisible = prev.includes(id) 
+        ? prev.filter(g => g !== id)
+        : [...prev, id];
+      localStorage.setItem(STORAGE_KEYS.VISIBLE_GADGETS, JSON.stringify(newVisible));
+      return newVisible;
+    });
+  };
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
@@ -740,7 +762,11 @@ function App() {
           JSON.stringify(savedDescriptions),
         );
       }
-      await chrome.bookmarks.create({ parentId: activeContainerId, title, url });
+      await chrome.bookmarks.create({
+        parentId: activeContainerId,
+        title,
+        url,
+      });
     }
     setIsBookmarkDialogOpen(false);
   };
@@ -904,6 +930,7 @@ function App() {
         handleExport={handleExport}
         handleImport={handleImport}
         fileInputRef={fileInputRef}
+        openGadgetsManager={() => setIsGadgetsManagerOpen(true)}
       />
 
       <SearchResults
@@ -927,7 +954,8 @@ function App() {
               openAddBookmark={openAddBookmark}
             />
 
-            <TrendingStreams />
+            {visibleGadgets.includes("trending-streams") && <TrendingStreams />}
+            {visibleGadgets.includes("flamengo-status") && <FlamengoStatus />}
 
             <div
               className={`grid ${currentLayout === "grid" ? "lg:grid-cols-3 md:grid-cols-2 grid-cols-1" : "lg:grid-cols-4 md:grid-cols-3 grid-cols-2"}  gap-6`}
@@ -936,7 +964,9 @@ function App() {
                 <ContainerCard
                   key={container.id}
                   container={container}
-                  containerBookmarks={bookmarks.filter(b => b.containerId === container.id)}
+                  containerBookmarks={bookmarks.filter(
+                    (b) => b.containerId === container.id,
+                  )}
                   currentLayout={currentLayout}
                   editingContainerId={editingContainerId}
                   editingContainerTitle={editingContainerTitle}
@@ -947,7 +977,9 @@ function App() {
                   openAddBookmark={openAddBookmark}
                   openEditBookmark={openEditBookmark}
                   onClickBookmark={handleBookmarkClick}
-                  onShowAlert={(title, message) => showDialog({ type: "alert", title, message })}
+                  onShowAlert={(title, message) =>
+                    showDialog({ type: "alert", title, message })
+                  }
                 />
               ))}
               <div
@@ -972,10 +1004,15 @@ function App() {
         onDelete={deleteBookmark}
         onClose={() => setIsBookmarkDialogOpen(false)}
       />
+      
+      <GadgetsManager 
+        isOpen={isGadgetsManagerOpen}
+        onClose={() => setIsGadgetsManagerOpen(false)}
+        visibleGadgets={visibleGadgets}
+        toggleGadget={toggleGadget}
+      />
     </div>
   );
 }
-
-
 
 export default App;

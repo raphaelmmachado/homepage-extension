@@ -26,5 +26,6 @@ export const STORAGE_KEYS = {
   SEARCH_ENGINE: "my-homepage-search-engine",
   LAYOUT: "my-homepage-layout",
   THEME: "my-homepage-theme",
+  VISIBLE_GADGETS: "my-homepage-visible-gadgets",
 };
 
