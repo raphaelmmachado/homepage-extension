@@ -83,6 +83,15 @@ interface ExtractedMatch {
     round?: number;
     cupRoundType?: number;
   };
+  tournament?: {
+    name?: string;
+    uniqueTournament?: {
+      id?: number;
+    };
+  };
+  season?: {
+    id?: number;
+  };
 }
 
 interface StandingsRow {
@@ -143,49 +152,52 @@ const TOURNAMENTS_CONFIG = [
 /**
  * Função recursiva para extrair todos os jogos de qualquer estrutura de chaves (cuptrees)
  */
-function extractMatchesRecursively(data: any): ExtractedMatch[] {
+function extractMatchesRecursively(data: unknown): ExtractedMatch[] {
   const list: ExtractedMatch[] = [];
   const seenIds = new Set<string>();
 
-  function traverse(node: any) {
+  function traverse(node: unknown) {
     if (!node || typeof node !== "object") return;
-
-    if (
-      node.homeTeam?.id &&
-      node.awayTeam?.id &&
-      (node.startTimestamp || node.id)
-    ) {
-      const matchId = `${node.id || ""}-${node.startTimestamp || ""}-${node.homeTeam.id}-${node.awayTeam.id}`;
-      if (!seenIds.has(matchId)) {
-        seenIds.add(matchId);
-        list.push(node as ExtractedMatch);
-      }
-    }
-
-    if (node.event && node.event.homeTeam?.id && node.event.awayTeam?.id) {
-      traverse(node.event);
-    }
-
-    if (Array.isArray(node.events)) {
-      for (const ev of node.events) {
-        traverse(ev);
-      }
-    }
 
     if (Array.isArray(node)) {
       for (const item of node) {
         traverse(item);
       }
-    } else {
-      for (const key of Object.keys(node)) {
-        if (
-          key !== "manager" &&
-          key !== "players" &&
-          key !== "substitutions" &&
-          key !== "treeViews"
-        ) {
-          traverse(node[key]);
-        }
+      return;
+    }
+
+    const obj = node as Record<string, unknown>;
+    const homeTeam = obj.homeTeam as ExtractedMatch["homeTeam"];
+    const awayTeam = obj.awayTeam as ExtractedMatch["awayTeam"];
+    const startTimestamp = obj.startTimestamp as number | undefined;
+    const id = obj.id as number | string | undefined;
+
+    if (homeTeam?.id && awayTeam?.id && (startTimestamp || id)) {
+      const matchId = `${id || ""}-${startTimestamp || ""}-${homeTeam.id}-${awayTeam.id}`;
+      if (!seenIds.has(matchId)) {
+        seenIds.add(matchId);
+        list.push(obj as unknown as ExtractedMatch);
+      }
+    }
+
+    if (obj.event && typeof obj.event === "object") {
+      traverse(obj.event);
+    }
+
+    if (Array.isArray(obj.events)) {
+      for (const ev of obj.events) {
+        traverse(ev);
+      }
+    }
+
+    for (const key of Object.keys(obj)) {
+      if (
+        key !== "manager" &&
+        key !== "players" &&
+        key !== "substitutions" &&
+        key !== "treeViews"
+      ) {
+        traverse(obj[key]);
       }
     }
   }
@@ -364,6 +376,7 @@ export function FlamengoStatus() {
           }
         } catch (e) {
           // ignore cache error
+          console.error("Erro ao ler cache do Sofascore:", e);
         }
       }
     }
@@ -451,7 +464,7 @@ export function FlamengoStatus() {
               // B. Se for Copa ou torneio misto (Libertadores, Copa do Brasil, Carioca), busca chaveamento
               if (!tourn.isLeague) {
                 try {
-                  let candidateMatches: ExtractedMatch[] = [];
+                  const candidateMatches: ExtractedMatch[] = [];
 
                   // B.1 Tenta buscar via cuptrees
                   const cupRes = await fetch(
@@ -493,7 +506,7 @@ export function FlamengoStatus() {
                             const evData = await evRes.json();
                             const rEvents = evData.events || [];
                             const flaInRound = rEvents.filter(
-                              (e: any) =>
+                              (e: ExtractedMatch) =>
                                 e.homeTeam?.id === SOFASCORE_TEAM_ID ||
                                 e.awayTeam?.id === SOFASCORE_TEAM_ID,
                             );
@@ -507,11 +520,12 @@ export function FlamengoStatus() {
                     }
                   } catch (e) {
                     // ignore rounds error
+                    console.error(`Erro ao buscar rounds de ${tourn.name}:`, e);
                   }
 
                   // B.3 Complementa com eventos diretos do time nesta competição
                   const directEvents = allTeamEvents.filter(
-                    (ev: any) =>
+                    (ev: ExtractedMatch) =>
                       ev.tournament?.uniqueTournament?.id === tourn.id ||
                       ev.season?.id === latestSeason.id,
                   );
@@ -964,28 +978,6 @@ export function FlamengoStatus() {
                   >
                     {activeChamp.status}
                   </span>
-                  <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200">
-                    <img
-                      src={FLAMENGO_LOGO_URL}
-                      alt="Flamengo"
-                      className="w-4 h-4 object-contain inline-block shrink-0"
-                    />
-                    <span>Flamengo</span>
-                    <span className="text-xs text-gray-400 font-normal">
-                      vs
-                    </span>
-                    {activeChamp.knockout.opponentId && (
-                      <img
-                        src={`https://api.sofascore.app/api/v1/team/${activeChamp.knockout.opponentId}/image`}
-                        alt=""
-                        className="w-4 h-4 object-contain inline-block shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    )}
-                    <span>{activeChamp.knockout.opponent}</span>
-                  </div>
                 </div>
 
                 {/* Lista de Jogos (Ida e Volta) com Escudos */}
