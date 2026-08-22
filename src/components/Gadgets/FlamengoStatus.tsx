@@ -127,26 +127,17 @@ const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     phase: "Mata-mata",
     color: "bg-purple-600",
   },
-  {
-    id: "tourn_386",
-    name: "Carioca",
-    status: "Carregando...",
-    phase: "Encerrado",
-    color: "bg-blue-600",
-  },
 ];
 
 const SOFASCORE_TEAM_ID = 5981; // ID Oficial do Flamengo no Sofascore
 const FLAMENGO_LOGO_URL = `https://api.sofascore.app/api/v1/team/${SOFASCORE_TEAM_ID}/image`;
-const CACHE_KEY = "my-homepage-flamengo-sofascore-v7";
+const CACHE_KEY = "my-homepage-flamengo-sofascore-v8";
 const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 horas de cache
 
-// Campeonato Carioca ordenado por último
 const TOURNAMENTS_CONFIG = [
   { id: 325, name: "Brasileirão", isLeague: true },
   { id: 384, name: "Libertadores", isLeague: false },
   { id: 373, name: "Copa do Brasil", isLeague: false },
-  { id: 386, name: "Carioca", isLeague: false },
 ];
 
 /**
