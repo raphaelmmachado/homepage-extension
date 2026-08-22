@@ -132,7 +132,8 @@ const DEFAULT_CHAMPIONSHIPS: Championship[] = [
 ];
 
 const SOFASCORE_TEAM_ID = 5981; // ID Oficial do Flamengo no Sofascore
-const CACHE_KEY = "my-homepage-flamengo-sofascore-v5";
+const FLAMENGO_LOGO_URL = `https://api.sofascore.app/api/v1/team/${SOFASCORE_TEAM_ID}/image`;
+const CACHE_KEY = "my-homepage-flamengo-sofascore-v6";
 const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 horas de cache
 
 // Campeonato Carioca ordenado por último
@@ -654,15 +655,11 @@ export function FlamengoStatus() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-600">
             <img
-              src={
-                nextMatch.flamengoLogo ||
-                "https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg"
-              }
+              src={nextMatch.flamengoLogo || FLAMENGO_LOGO_URL}
               alt="Flamengo"
               className="w-8 h-8 object-contain"
               onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg";
+                (e.target as HTMLImageElement).src = FLAMENGO_LOGO_URL;
               }}
             />
           </div>
@@ -719,15 +716,11 @@ export function FlamengoStatus() {
                 <>
                   <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm mb-2 flex items-center justify-center">
                     <img
-                      src={
-                        nextMatch.flamengoLogo ||
-                        "https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg"
-                      }
+                      src={nextMatch.flamengoLogo || FLAMENGO_LOGO_URL}
                       alt="Flamengo"
                       className="w-10 h-10 object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg";
+                        (e.target as HTMLImageElement).src = FLAMENGO_LOGO_URL;
                       }}
                     />
                   </div>
@@ -779,15 +772,11 @@ export function FlamengoStatus() {
                 <>
                   <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm mb-2 flex items-center justify-center">
                     <img
-                      src={
-                        nextMatch.flamengoLogo ||
-                        "https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg"
-                      }
+                      src={nextMatch.flamengoLogo || FLAMENGO_LOGO_URL}
                       alt="Flamengo"
                       className="w-10 h-10 object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg";
+                        (e.target as HTMLImageElement).src = FLAMENGO_LOGO_URL;
                       }}
                     />
                   </div>
@@ -867,7 +856,7 @@ export function FlamengoStatus() {
                   </span>
                   <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200">
                     <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg"
+                      src={FLAMENGO_LOGO_URL}
                       alt="Flamengo"
                       className="w-4 h-4 object-contain inline-block shrink-0"
                     />

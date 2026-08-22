@@ -6,7 +6,8 @@
   "permissions": ["storage", "bookmarks"],
   "host_permissions": [
     "*://*.justwatch.com/*",
-    "*://*.sofascore.com/*"
+    "*://*.sofascore.com/*",
+    "*://*.sofascore.app/*"
   ],
   "action": {
     "default_title": "Página Inicial",
