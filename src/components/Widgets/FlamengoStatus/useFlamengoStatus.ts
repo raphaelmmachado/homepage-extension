@@ -15,7 +15,6 @@ import {
   CACHE_TTL,
   TOURNAMENTS_CONFIG,
   DEFAULT_CHAMPIONSHIPS,
-  MOCK_BRASILEIRAO_STANDINGS,
 } from "./constants";
 import {
   extractMatchesRecursively,

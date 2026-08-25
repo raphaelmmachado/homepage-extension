@@ -21,7 +21,7 @@ type Props = {
   onUnarchiveContainer?: (id: string) => void;
   openAddBookmark: (containerId: string) => void;
   openEditBookmark: (bookmark: Bookmark) => void;
-  onClickBookmark: (id: string) => void;
+  onClickBookmark: (url: string) => void;
   onShowAlert: (title: string, message: string) => void;
   onDragStart?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
@@ -106,7 +106,9 @@ export function ContainerCardView({
             <input
               type="text"
               autoFocus
-              className="text-xl font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 flex-grow outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              className={`${
+                isArchived ? "text-lg" : "text-xl"
+              } font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 flex-grow outline-none focus:ring-2 focus:ring-blue-500 w-full`}
               value={editingContainerTitle}
               onChange={(e) => setEditingContainerTitle(e.target.value)}
               onBlur={() => saveContainerTitle(container.id)}
@@ -117,7 +119,9 @@ export function ContainerCardView({
             />
           ) : (
             <h2
-              className={`text-xl font-bold text-gray-800 dark:text-gray-200 truncate select-none ${
+              className={`${
+                isArchived ? "text-lg" : "text-xl"
+              } font-bold text-gray-800 dark:text-gray-200 truncate select-none ${
                 isArchived ? "cursor-pointer" : "cursor-text"
               }`}
               onClick={(e) => {

@@ -110,25 +110,45 @@ export function useBookmarks(
   const saveBookmark = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const title = (formData.get("title") as string)?.trim() || "";
+    const title =
+      ((formData.get("title") || formData.get("name")) as string)?.trim() ||
+      "";
     const url = (formData.get("url") as string)?.trim() || "";
     const customIcon = (formData.get("customIcon") as string)?.trim() || "";
     const description = (formData.get("description") as string)?.trim() || "";
 
     if (editingBookmark) {
-      await BookmarkRepo.updateBookmark(editingBookmark.id, editingBookmark.url || "", { title, url, customIcon: customIcon || undefined, description: description || undefined });
+      await BookmarkRepo.updateBookmark(
+        editingBookmark.id,
+        editingBookmark.url || "",
+        {
+          title,
+          url,
+          customIcon,
+          description,
+        },
+      );
     } else if (activeContainerId) {
-      await BookmarkRepo.createBookmark({ parentId: activeContainerId, title, url, customIcon: customIcon || undefined, description: description || undefined });
+      await BookmarkRepo.createBookmark({
+        parentId: activeContainerId,
+        title,
+        url,
+        customIcon: customIcon || undefined,
+        description: description || undefined,
+      });
     }
     setIsBookmarkDialogOpen(false);
-    loadData();
+    await loadData();
   };
 
   const deleteBookmark = async () => {
     if (editingBookmark) {
-      await BookmarkRepo.deleteBookmark(editingBookmark.id);
+      await BookmarkRepo.deleteBookmark(
+        editingBookmark.id,
+        editingBookmark.url || "",
+      );
       setIsBookmarkDialogOpen(false);
-      loadData();
+      await loadData();
     }
   };
 

@@ -7,7 +7,7 @@ type Props = {
   automaticTopSites: Bookmark[];
   manualTopSites: Bookmark[];
   openEditBookmark: (bookmark: Bookmark) => void;
-  onClickBookmark: (id: string) => void;
+  onClickBookmark: (url: string) => void;
   openAddBookmark: (containerId: string) => void;
 };
 

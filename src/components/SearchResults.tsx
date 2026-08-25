@@ -10,7 +10,7 @@ type Props = {
   searchResultsRef: React.RefObject<HTMLDivElement | null>;
   handleSearchResultsKeyDown: (e: React.KeyboardEvent) => void;
   openEditBookmark: (bookmark: Bookmark) => void;
-  onClickBookmark: (id: string) => void;
+  onClickBookmark: (url: string) => void;
 };
 
 export function SearchResults({

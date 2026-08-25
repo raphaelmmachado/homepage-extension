@@ -15,7 +15,7 @@ export function BookmarkItem({
   bookmark: Bookmark;
   layout: Layout;
   onEdit: () => void;
-  onClickBookmark?: (id: string) => void;
+  onClickBookmark?: (url: string) => void;
   provided?: DraggableProvided;
   snapshot?: DraggableStateSnapshot;
 }) {
@@ -38,7 +38,7 @@ export function BookmarkItem({
   };
 
   const handleClick = () => {
-    if (onClickBookmark) onClickBookmark(bookmark.id);
+    if (onClickBookmark) onClickBookmark(bookmark.url);
   };
 
   if (layout === "list") {

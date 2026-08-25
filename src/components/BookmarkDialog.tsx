@@ -64,7 +64,7 @@ function BookmarkDialogContent({
             </label>
             <input
               type="text"
-              name="name"
+              name="title"
               defaultValue={
                 editingBookmark?.name || editingBookmark?.title || ""
               }
