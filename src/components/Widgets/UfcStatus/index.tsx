@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import type { UfcEvent, FightMatch, Fighter } from "./types";
+import { SportsDataClient } from "../../../services/SportsDataClient";
 import {
   UFC_LOGO_URL,
   DEFAULT_MOCK_EVENT,
@@ -66,35 +67,7 @@ export function UfcStatus() {
       const future = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
       const endStr = future.toISOString().slice(0, 10).replace(/-/g, "");
 
-      const [scoreboardRes, rankingsRes, ufcEventsRes, ufcRankingsRes] = await Promise.all([
-        fetch(
-          `https://site.web.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=${startStr}-${endStr}`,
-          { headers: { "User-Agent": "Mozilla/5.0" } },
-        ),
-        fetch(
-          "https://site.web.api.espn.com/apis/site/v2/sports/mma/ufc/rankings",
-          { headers: { "User-Agent": "Mozilla/5.0" } },
-        ),
-        fetch("https://www.ufc.com.br/events", {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          },
-        }).catch(() => null),
-        fetch("https://www.ufc.com.br/rankings", {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          },
-        }).catch(() => null),
-      ]);
-
-      const scoreboardData = scoreboardRes.ok ? await scoreboardRes.json() : {};
-      const rankingsData = rankingsRes.ok ? await rankingsRes.json() : {};
-      const ufcEventsHtml =
-        ufcEventsRes && ufcEventsRes.ok ? await ufcEventsRes.text() : "";
-      const ufcRankingsHtml =
-        ufcRankingsRes && ufcRankingsRes.ok ? await ufcRankingsRes.text() : "";
+      const { scoreboardData, rankingsData, ufcEventsHtml, ufcRankingsHtml } = await SportsDataClient.fetchUfcData(startStr, endStr);
 
       const ufcRankMap = parseUfcRankingsHtml(ufcRankingsHtml);
       const ufcPhotoMap = new Map([

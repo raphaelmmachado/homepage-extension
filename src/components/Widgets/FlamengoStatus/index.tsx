@@ -30,6 +30,7 @@ import {
   normalizeString,
 } from "./utils";
 import { SofascoreEmbedView } from "./SofascoreEmbedView";
+import { SportsDataClient } from "../../../services/SportsDataClient";
 
 export function FlamengoStatus() {
   const [initialData] = useState(getInitialCachedData);
@@ -75,17 +76,7 @@ export function FlamengoStatus() {
       // 1. Puxar eventos recentes e futuros do time (para garantir chaveamento e dados ao vivo)
       let allTeamEvents: ExtractedMatch[] = [];
       try {
-        const [lastRes, nextRes] = await Promise.all([
-          fetch(
-            `https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/last/0`,
-          ),
-          fetch(
-            `https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/next/0`,
-          ),
-        ]);
-
-        const lastData = lastRes.ok ? await lastRes.json() : {};
-        const nextData = nextRes.ok ? await nextRes.json() : {};
+        const { lastData, nextData } = await SportsDataClient.fetchTeamData(SOFASCORE_TEAM_ID);
 
         allTeamEvents = [
           ...(lastData.events || []),
@@ -140,11 +131,8 @@ export function FlamengoStatus() {
           let fetchedCity = "";
           if (activeEvent.id) {
             try {
-              const eventDetailsRes = await fetch(
-                `https://api.sofascore.com/api/v1/event/${activeEvent.id}`,
-              );
-              if (eventDetailsRes.ok) {
-                const eventData = await eventDetailsRes.json();
+              const eventData = await SportsDataClient.fetchEventDetails(activeEvent.id);
+              if (eventData) {
                 const networks =
                   eventData.event?.tvNetworks ||
                   eventData.event?.media ||

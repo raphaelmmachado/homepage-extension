@@ -3,7 +3,7 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { CustomDialog } from "./components/CustomDialog";
 
 import { BookmarkDialog } from "./components/BookmarkDialog";
-import { ContainerCard } from "./components/ContainerCard";
+import { ContainerCardView } from "./components/ContainerCardView";
 import { TopSites } from "./components/TopSites";
 import { SearchResults } from "./components/SearchResults";
 import { Header } from "./components/Header";
@@ -168,7 +168,8 @@ function App() {
             >
               {activeContainers.map((container) => (
                 <div key={container.id} className="h-full flex flex-col">
-                  <ContainerCard
+                  <ContainerCardView
+                    mode="active"
                     container={container}
                     containerBookmarks={bookmarks.filter(
                       (b) => b.containerId === container.id,

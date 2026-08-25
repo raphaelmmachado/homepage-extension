@@ -4,9 +4,10 @@ import { BookmarkItem } from "./BookmarkItem";
 import * as svgs from "../svgs";
 
 type Props = {
+  mode: "active" | "archived";
   container: Container;
   containerBookmarks: Bookmark[];
-  currentLayout: Layout;
+  currentLayout?: Layout;
   editingContainerId: string | null;
   editingContainerTitle: string;
   setEditingContainerTitle: (title: string) => void;
@@ -14,6 +15,7 @@ type Props = {
   saveContainerTitle: (id: string) => void;
   deleteContainer: (id: string, title: string) => void;
   onArchiveContainer?: (id: string) => void;
+  onUnarchiveContainer?: (id: string) => void;
   openAddBookmark: (containerId: string) => void;
   openEditBookmark: (bookmark: Bookmark) => void;
   onClickBookmark: (id: string) => void;
@@ -26,10 +28,11 @@ type Props = {
   isDragOver?: boolean;
 };
 
-export function ContainerCard({
+export function ContainerCardView({
+  mode,
   container,
   containerBookmarks,
-  currentLayout,
+  currentLayout = "grid",
   editingContainerId,
   editingContainerTitle,
   setEditingContainerTitle,
@@ -37,6 +40,7 @@ export function ContainerCard({
   saveContainerTitle,
   deleteContainer,
   onArchiveContainer,
+  onUnarchiveContainer,
   openAddBookmark,
   openEditBookmark,
   onClickBookmark,
@@ -48,12 +52,14 @@ export function ContainerCard({
   isDragging,
   isDragOver,
 }: Props) {
+  const isArchived = mode === "archived";
+
   return (
     <div
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md relative group/category transition-all duration-200 flex flex-col h-full ${
+      className={`${isArchived ? "bg-gray-50 dark:bg-gray-800/50" : "bg-white dark:bg-gray-800"} p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md relative group/category transition-all duration-200 flex flex-col h-full ${
         isDragging ? "opacity-30 scale-[0.98] border-dashed border-2 border-blue-400 dark:border-blue-500 shadow-xl" : ""
       } ${
         isDragOver ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 border-blue-500 scale-[1.02] shadow-xl" : ""
@@ -79,7 +85,7 @@ export function ContainerCard({
           />
         ) : (
           <h2
-            className="text-xl font-bold text-gray-800 dark:text-gray-200 flex-grow cursor-text pr-16 select-none"
+            className={`text-xl font-bold flex-grow cursor-text pr-16 select-none ${isArchived ? "text-gray-500 dark:text-gray-400" : "text-gray-800 dark:text-gray-200"}`}
             onClick={(e) => {
               e.stopPropagation();
               if (container.id !== "1") {
@@ -98,7 +104,7 @@ export function ContainerCard({
           </h2>
         )}
         <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-70 sm:opacity-0 sm:group-hover/category:opacity-100 transition-all duration-200 z-10">
-          {onArchiveContainer && (
+          {!isArchived && onArchiveContainer && (
             <button
               type="button"
               onClick={(e) => {
@@ -109,6 +115,19 @@ export function ContainerCard({
               title="Arquivar Pasta"
             >
               <div dangerouslySetInnerHTML={{ __html: svgs.archiveSVG }} className="w-4 h-4 flex items-center justify-center" />
+            </button>
+          )}
+          {isArchived && onUnarchiveContainer && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUnarchiveContainer(container.id);
+              }}
+              className="w-6 h-6 bg-gray-100 dark:bg-gray-700 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md flex items-center justify-center transition-colors cursor-pointer"
+              title="Desarquivar Pasta"
+            >
+              <div dangerouslySetInnerHTML={{ __html: svgs.archiveRestoreSVG }} className="w-4 h-4 flex items-center justify-center" />
             </button>
           )}
           <button
@@ -126,7 +145,7 @@ export function ContainerCard({
       </div>
 
       <Droppable
-        droppableId={container.id}
+        droppableId={isArchived ? `archived-${container.id}` : container.id}
         direction={currentLayout === "grid" ? "horizontal" : "vertical"}
       >
         {(provided) => (
@@ -135,8 +154,8 @@ export function ContainerCard({
             {...provided.droppableProps}
             className={
               currentLayout === "grid"
-                ? "flex flex-wrap gap-2 min-h-[50px] flex-grow content-start"
-                : "flex flex-col gap-1 min-h-[50px] flex-grow"
+                ? `flex flex-wrap gap-2 min-h-[50px] flex-grow content-start ${isArchived ? "opacity-60" : ""}`
+                : `flex flex-col gap-1 min-h-[50px] flex-grow ${isArchived ? "opacity-60" : ""}`
             }
           >
             {containerBookmarks.map((bookmark, index) => (
@@ -164,20 +183,14 @@ export function ContainerCard({
                 <>
                   <span
                     className="mr-2"
-                    dangerouslySetInnerHTML={{
-                      __html: svgs.addIconSVG,
-                    }}
+                    dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }}
                   />
                   <span className="text-sm">Adicionar</span>
                 </>
               ) : (
                 <>
                   <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: svgs.addIconSVG,
-                      }}
-                    />
+                    <div dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }} />
                   </div>
                   <span className="mt-2 text-sm">Adicionar</span>
                 </>

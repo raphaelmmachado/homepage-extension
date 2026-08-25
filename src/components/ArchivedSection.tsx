@@ -1,4 +1,4 @@
-import { ArchivedContainerCard } from "./ArchivedContainerCard";
+import { ContainerCardView } from "./ContainerCardView";
 import type { Container, Bookmark } from "../types";
 
 type Props = {
@@ -72,7 +72,9 @@ export function ArchivedSection({
         }`}
       >
         {archivedContainers.map((container) => (
-          <ArchivedContainerCard
+          <ContainerCardView
+            mode="archived"
+            onUnarchiveContainer={unarchiveContainer}
             key={container.id}
             container={container}
             containerBookmarks={bookmarks.filter(
@@ -84,7 +86,6 @@ export function ArchivedSection({
             setEditingContainerId={setEditingContainerId}
             saveContainerTitle={saveContainerTitle}
             deleteContainer={deleteContainer}
-            unarchiveContainer={unarchiveContainer}
             openAddBookmark={openAddBookmark}
             openEditBookmark={openEditBookmark}
             onClickBookmark={onClickBookmark}
