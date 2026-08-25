@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import type { Container, Bookmark, Layout } from "../types";
 import { BookmarkItem } from "./BookmarkItem";
@@ -5,6 +6,8 @@ import * as svgs from "../svgs";
 
 type Props = {
   mode?: "active" | "archived";
+  isArchived?: boolean;
+  defaultCollapsed?: boolean;
   container: Container;
   containerBookmarks: Bookmark[];
   currentLayout?: Layout;
@@ -15,6 +18,7 @@ type Props = {
   saveContainerTitle: (id: string) => void;
   deleteContainer: (id: string, title: string) => void;
   onArchiveContainer?: (id: string) => void;
+  onUnarchiveContainer?: (id: string) => void;
   openAddBookmark: (containerId: string) => void;
   openEditBookmark: (bookmark: Bookmark) => void;
   onClickBookmark: (id: string) => void;
@@ -28,6 +32,8 @@ type Props = {
 };
 
 export function ContainerCardView({
+  isArchived,
+  defaultCollapsed = false,
   container,
   containerBookmarks,
   currentLayout = "grid",
@@ -38,6 +44,7 @@ export function ContainerCardView({
   saveContainerTitle,
   deleteContainer,
   onArchiveContainer,
+  onUnarchiveContainer,
   openAddBookmark,
   openEditBookmark,
   onClickBookmark,
@@ -49,55 +56,101 @@ export function ContainerCardView({
   isDragging,
   isDragOver,
 }: Props) {
+  const [isOpen, setIsOpen] = useState(!defaultCollapsed);
+
   return (
     <div
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md relative group/category transition-all duration-200 flex flex-col h-full ${
-        isDragging ? "opacity-30 scale-[0.98] border-dashed border-2 border-blue-400 dark:border-blue-500 shadow-xl" : ""
+      className={`bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md relative group/category transition-all duration-200 flex flex-col ${
+        isOpen ? "h-full" : ""
       } ${
-        isDragOver ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 border-blue-500 scale-[1.02] shadow-xl" : ""
+        isDragging
+          ? "opacity-30 scale-[0.98] border-dashed border-2 border-blue-400 dark:border-blue-500 shadow-xl"
+          : ""
+      } ${
+        isDragOver
+          ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 border-blue-500 scale-[1.02] shadow-xl"
+          : ""
       }`}
     >
-      <div 
+      <div
         draggable={true}
         onDragStart={onDragStart}
-        className="flex justify-between items-center mb-4 cursor-grab active:cursor-grabbing select-none"
+        className={`flex justify-between items-center cursor-grab active:cursor-grabbing select-none ${
+          isOpen ? "mb-4" : "mb-0"
+        }`}
       >
-        {editingContainerId === container.id ? (
-          <input
-            type="text"
-            autoFocus
-            className="text-xl font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 flex-grow outline-none focus:ring-2 focus:ring-blue-500 w-full mr-16"
-            value={editingContainerTitle}
-            onChange={(e) => setEditingContainerTitle(e.target.value)}
-            onBlur={() => saveContainerTitle(container.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveContainerTitle(container.id);
-              if (e.key === "Escape") setEditingContainerId(null);
-            }}
-          />
-        ) : (
-          <h2
-            className="text-xl font-bold text-gray-800 dark:text-gray-200 flex-grow cursor-text pr-16 select-none"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (container.id !== "1") {
-                setEditingContainerId(container.id);
-                setEditingContainerTitle(container.title);
-              } else {
-                onShowAlert(
-                  "Aviso",
-                  "A Barra de Favoritos padrão do navegador não pode ser renomeada."
-                );
+        <div className="flex items-center gap-2 flex-grow pr-16 min-w-0">
+          {isArchived && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen((prev) => !prev);
+              }}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors cursor-pointer flex-shrink-0"
+              title={isOpen ? "Recolher favoritos" : "Mostrar favoritos"}
+            >
+              <div
+                dangerouslySetInnerHTML={{ __html: svgs.chevronDownSVG }}
+                className={`w-4 h-4 transform transition-transform duration-200 ${
+                  isOpen ? "rotate-0" : "-rotate-90"
+                }`}
+              />
+            </button>
+          )}
+
+          {editingContainerId === container.id ? (
+            <input
+              type="text"
+              autoFocus
+              className="text-xl font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 flex-grow outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              value={editingContainerTitle}
+              onChange={(e) => setEditingContainerTitle(e.target.value)}
+              onBlur={() => saveContainerTitle(container.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveContainerTitle(container.id);
+                if (e.key === "Escape") setEditingContainerId(null);
+              }}
+            />
+          ) : (
+            <h2
+              className={`text-xl font-bold text-gray-800 dark:text-gray-200 truncate select-none ${
+                isArchived ? "cursor-pointer" : "cursor-text"
+              }`}
+              onClick={(e) => {
+                if (isArchived) {
+                  e.stopPropagation();
+                  setIsOpen((prev) => !prev);
+                }
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                if (container.id !== "1") {
+                  setEditingContainerId(container.id);
+                  setEditingContainerTitle(container.title);
+                } else {
+                  onShowAlert(
+                    "Aviso",
+                    "A Barra de Favoritos padrão do navegador não pode ser renomeada.",
+                  );
+                }
+              }}
+              title={
+                isArchived
+                  ? `${container.title} (clique para ${isOpen ? "recolher" : "expandir"}, duplo-clique para renomear)`
+                  : container.id !== "1"
+                    ? "Clique para renomear, arraste para mover"
+                    : "Arraste para mover"
               }
-            }}
-            title={container.id !== "1" ? "Clique para renomear, arraste para mover" : "Arraste para mover"}
-          >
-            {container.title}
-          </h2>
-        )}
+            >
+              {container.title}
+            </h2>
+          )}
+        </div>
+
         <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-70 sm:opacity-0 sm:group-hover/category:opacity-100 transition-all duration-200 z-10">
           {onArchiveContainer && (
             <button
@@ -109,7 +162,26 @@ export function ContainerCardView({
               className="w-7 h-7 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-400 rounded-full flex items-center justify-center text-lg hover:!opacity-100 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer transition-colors"
               title="Arquivar Pasta"
             >
-              <div dangerouslySetInnerHTML={{ __html: svgs.archiveSVG }} className="w-4 h-4 flex items-center justify-center" />
+              <div
+                dangerouslySetInnerHTML={{ __html: svgs.archiveSVG }}
+                className="w-4 h-4 flex items-center justify-center"
+              />
+            </button>
+          )}
+          {onUnarchiveContainer && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUnarchiveContainer(container.id);
+              }}
+              className="w-7 h-7 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-400 rounded-full flex items-center justify-center text-lg hover:!opacity-100 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer transition-colors"
+              title="Desarquivar Pasta"
+            >
+              <div
+                dangerouslySetInnerHTML={{ __html: svgs.archiveRestoreSVG }}
+                className="w-4 h-4 flex items-center justify-center"
+              />
             </button>
           )}
           <button
@@ -121,66 +193,77 @@ export function ContainerCardView({
             className="w-7 h-7 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-400 rounded-full flex items-center justify-center text-lg hover:!opacity-100 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 cursor-pointer transition-colors"
             title="Excluir Pasta"
           >
-            <div dangerouslySetInnerHTML={{ __html: svgs.trashSVG }} className="w-4 h-4 flex items-center justify-center" />
+            <div
+              dangerouslySetInnerHTML={{ __html: svgs.trashSVG }}
+              className="w-4 h-4 flex items-center justify-center"
+            />
           </button>
         </div>
       </div>
 
-      <Droppable
-        droppableId={container.id}
-        direction={currentLayout === "grid" ? "horizontal" : "vertical"}
-      >
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={
-              currentLayout === "grid"
-                ? "flex flex-wrap gap-2 min-h-[50px] flex-grow content-start"
-                : "flex flex-col gap-1 min-h-[50px] flex-grow"
-            }
-          >
-            {containerBookmarks.map((bookmark, index) => (
-              <Draggable key={bookmark.id} draggableId={bookmark.id} index={index}>
-                {(provided, snapshot) => (
-                  <BookmarkItem
-                    bookmark={bookmark}
-                    layout={currentLayout}
-                    onEdit={() => openEditBookmark(bookmark)}
-                    onClickBookmark={onClickBookmark}
-                    provided={provided}
-                    snapshot={snapshot}
-                  />
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-            <button
-              onClick={() => openAddBookmark(container.id)}
-              className={`flex p-2 items-center rounded-xl hover:bg-gray-200/70 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300
-                ${currentLayout === "grid" ? "flex-col justify-center w-20" : "w-full"}
-                ${containerBookmarks.length > 0 ? "opacity-0 group-hover/category:opacity-100" : "opacity-100"}`}
+      {isOpen && (
+        <Droppable
+          droppableId={container.id}
+          direction={currentLayout === "grid" ? "horizontal" : "vertical"}
+        >
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={
+                currentLayout === "grid"
+                  ? "flex flex-wrap gap-2 min-h-[50px] flex-grow content-start"
+                  : "flex flex-col gap-1 min-h-[50px] flex-grow"
+              }
             >
-              {currentLayout === "list" ? (
-                <>
-                  <span
-                    className="mr-2"
-                    dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }}
-                  />
-                  <span className="text-sm">Adicionar</span>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
-                    <div dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }} />
-                  </div>
-                  <span className="mt-2 text-sm">Adicionar</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </Droppable>
+              {containerBookmarks.map((bookmark, index) => (
+                <Draggable
+                  key={bookmark.id}
+                  draggableId={bookmark.id}
+                  index={index}
+                >
+                  {(provided, snapshot) => (
+                    <BookmarkItem
+                      bookmark={bookmark}
+                      layout={currentLayout}
+                      onEdit={() => openEditBookmark(bookmark)}
+                      onClickBookmark={onClickBookmark}
+                      provided={provided}
+                      snapshot={snapshot}
+                    />
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              <button
+                onClick={() => openAddBookmark(container.id)}
+                className={`flex p-2 items-center rounded-xl hover:bg-gray-200/70 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300
+                  ${currentLayout === "grid" ? "flex-col justify-center w-20" : "w-full"}
+                  ${containerBookmarks.length > 0 ? "opacity-0 group-hover/category:opacity-100" : "opacity-100"}`}
+              >
+                {currentLayout === "list" ? (
+                  <>
+                    <span
+                      className="mr-2"
+                      dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }}
+                    />
+                    <span className="text-sm">Adicionar</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
+                      <div
+                        dangerouslySetInnerHTML={{ __html: svgs.addIconSVG }}
+                      />
+                    </div>
+                    <span className="mt-2 text-sm">Adicionar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </Droppable>
+      )}
     </div>
   );
 }

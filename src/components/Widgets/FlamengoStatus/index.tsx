@@ -1,9 +1,7 @@
 import { useFlamengoStatus } from "./useFlamengoStatus";
-import { formatMatchDateTime, resolveStadiumDisplay } from "./utils";
-import { ACTIVE_CLUB, FLAMENGO_LOGO_URL } from "./constants";
+import { resolveStadiumDisplay } from "./utils";
+import { FLAMENGO_LOGO_URL } from "./constants";
 import { SofascoreEmbedView } from "./SofascoreEmbedView";
-import * as svgs from "../../../svgs";
-import type { ExtractedMatch, StandingsRow, StandingsTeamRow } from "./types";
 
 export function FlamengoStatus() {
   const {

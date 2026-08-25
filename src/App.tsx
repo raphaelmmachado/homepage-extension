@@ -233,6 +233,7 @@ function App() {
             <ArchivedSection
               archivedContainers={archivedContainers}
               bookmarks={bookmarks}
+              currentLayout={currentLayout}
               editingContainerId={editingContainerId}
               editingContainerTitle={editingContainerTitle}
               setEditingContainerTitle={setEditingContainerTitle}

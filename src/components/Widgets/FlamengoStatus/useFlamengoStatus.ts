@@ -15,6 +15,7 @@ import {
   CACHE_TTL,
   TOURNAMENTS_CONFIG,
   DEFAULT_CHAMPIONSHIPS,
+  MOCK_BRASILEIRAO_STANDINGS,
 } from "./constants";
 import {
   extractMatchesRecursively,
@@ -578,13 +579,37 @@ export function useFlamengoStatus() {
                         const scoresAgainst = r.scoresAgainst ?? 0;
                         const goalDiff = scoresFor - scoresAgainst;
 
-                        let formList = parseForm(r.form || r.recentForm);
+                        let formList = parseForm(
+                          r.form ||
+                          r.recentForm ||
+                          (r as unknown as Record<string, unknown>).formResults ||
+                          (r as unknown as Record<string, unknown>).lastMatches
+                        );
+
                         if (
                           formList.length === 0 &&
                           r.team?.id === SOFASCORE_TEAM_ID &&
                           flaFallbackForm.length > 0
                         ) {
                           formList = flaFallbackForm;
+                        }
+
+                        if (formList.length === 0) {
+                          const mockTeam = MOCK_BRASILEIRAO_STANDINGS.find(
+                            (m) =>
+                              (r.team?.id && m.teamId === r.team.id) ||
+                              (r.team?.name &&
+                                normalizeString(m.teamName).includes(
+                                  normalizeString(r.team.name),
+                                )) ||
+                              (r.team?.shortName &&
+                                normalizeString(m.teamName).includes(
+                                  normalizeString(r.team.shortName),
+                                )),
+                          );
+                          if (mockTeam && mockTeam.form && mockTeam.form.length > 0) {
+                            formList = mockTeam.form;
+                          }
                         }
 
                         return {

@@ -221,8 +221,18 @@ export function parseForm(rawForm: unknown): string[] {
   } else if (Array.isArray(rawForm)) {
     items = rawForm.map((item) => {
       if (typeof item === "string") return item;
-      if (item && typeof item === "object" && "value" in item) {
-        return String((item as { value?: unknown }).value || "");
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        return String(
+          obj.value ||
+          obj.result ||
+          obj.outcome ||
+          obj.type ||
+          obj.status ||
+          obj.form ||
+          obj.res ||
+          ""
+        );
       }
       return "";
     });
@@ -232,10 +242,10 @@ export function parseForm(rawForm: unknown): string[] {
     .map((c) => c.trim().toUpperCase())
     .filter(Boolean)
     .map((c) => {
-      if (c === "W" || c === "V") return "V";
-      if (c === "D" || c === "E") return "E";
-      if (c === "L") return "D";
-      return c;
+      if (c === "W" || c === "V" || c === "WIN" || c === "VITÓRIA" || c === "VITORIA") return "V";
+      if (c === "D" || c === "E" || c === "DRAW" || c === "EMPATE") return "E";
+      if (c === "L" || c === "LOSS" || c === "DERROTA") return "D";
+      return c.charAt(0);
     })
     .slice(-5);
 }

@@ -1,9 +1,10 @@
-import { ArchivedFolderCard } from "./ArchivedFolderCard";
-import type { Container, Bookmark } from "../types";
+import { ContainerCardView } from "./ContainerCardView";
+import type { Container, Bookmark, Layout } from "../types";
 
 type Props = {
   archivedContainers: Container[];
   bookmarks: Bookmark[];
+  currentLayout?: Layout;
   editingContainerId: string | null;
   editingContainerTitle: string;
   setEditingContainerTitle: (title: string) => void;
@@ -31,6 +32,7 @@ type Props = {
 export function ArchivedSection({
   archivedContainers,
   bookmarks,
+  currentLayout = "grid",
   editingContainerId,
   editingContainerTitle,
   setEditingContainerTitle,
@@ -57,39 +59,51 @@ export function ArchivedSection({
 
   return (
     <section
-      className="mb-6 flex flex-wrap gap-2.5 items-start transition-all"
+      className="mb-8"
       onDragOver={(e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
       }}
       onDrop={onDropOnArchivedSection}
     >
-      {archivedContainers.map((container) => (
-        <ArchivedFolderCard
-          key={container.id}
-          container={container}
-          containerBookmarks={bookmarks.filter(
-            (b) => b.containerId === container.id,
-          )}
-          editingContainerId={editingContainerId}
-          editingContainerTitle={editingContainerTitle}
-          setEditingContainerTitle={setEditingContainerTitle}
-          setEditingContainerId={setEditingContainerId}
-          saveContainerTitle={saveContainerTitle}
-          deleteContainer={deleteContainer}
-          unarchiveContainer={unarchiveContainer}
-          openAddBookmark={openAddBookmark}
-          openEditBookmark={openEditBookmark}
-          onClickBookmark={onClickBookmark}
-          onShowAlert={onShowAlert}
-          onDragStart={(e) => onDragStart(container.id, true, e)}
-          onDragOver={(e) => onDragOver(container.id, e)}
-          onDragLeave={(e) => onDragLeave(container.id, e)}
-          onDrop={(e) => onDropOnContainer(container.id, true, e)}
-          isDragging={draggedContainer?.id === container.id}
-          isDragOver={dragOverContainerId === container.id}
-        />
-      ))}
+      <div
+        className={`grid ${
+          currentLayout === "grid"
+            ? "lg:grid-cols-3 md:grid-cols-2 grid-cols-1"
+            : "lg:grid-cols-4 md:grid-cols-3 grid-cols-2"
+        } gap-6`}
+      >
+        {archivedContainers.map((container) => (
+          <div key={container.id} className="h-full flex flex-col">
+            <ContainerCardView
+              isArchived={true}
+              defaultCollapsed={true}
+              container={container}
+              containerBookmarks={bookmarks.filter(
+                (b) => b.containerId === container.id,
+              )}
+              currentLayout={currentLayout}
+              editingContainerId={editingContainerId}
+              editingContainerTitle={editingContainerTitle}
+              setEditingContainerTitle={setEditingContainerTitle}
+              setEditingContainerId={setEditingContainerId}
+              saveContainerTitle={saveContainerTitle}
+              deleteContainer={deleteContainer}
+              onUnarchiveContainer={unarchiveContainer}
+              openAddBookmark={openAddBookmark}
+              openEditBookmark={openEditBookmark}
+              onClickBookmark={onClickBookmark}
+              onShowAlert={onShowAlert}
+              onDragStart={(e) => onDragStart(container.id, true, e)}
+              onDragOver={(e) => onDragOver(container.id, e)}
+              onDragLeave={(e) => onDragLeave(container.id, e)}
+              onDrop={(e) => onDropOnContainer(container.id, true, e)}
+              isDragging={draggedContainer?.id === container.id}
+              isDragOver={dragOverContainerId === container.id}
+            />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
