@@ -543,15 +543,23 @@ export function useFlamengoStatus() {
 
                     if (leagueEvents.length === 0) {
                       const roundsData = await SportsDataClient.fetchTournamentRounds(tourn.id, s.id);
-                      const rList = (roundsData?.rounds || []).slice(-5);
+                      const curRound =
+                        (roundsData as { currentRound?: { round?: number } })?.currentRound?.round ||
+                        24;
+
+                      const targetRounds: number[] = [];
+                      for (let r = Math.max(1, curRound - 6); r <= curRound + 1; r++) {
+                        targetRounds.push(r);
+                      }
+
                       const roundResults = await Promise.all(
-                        rList.map((rd: { round: number }) =>
-                          SportsDataClient.fetchRoundEvents(tourn.id, s.id, rd.round)
+                        targetRounds.map((rNum) =>
+                          SportsDataClient.fetchRoundEvents(tourn.id, s.id, rNum)
                         )
                       );
                       for (const rr of roundResults) {
-                        if (rr && Array.isArray(rr.events)) {
-                          leagueEvents.push(...rr.events);
+                        if (rr && Array.isArray((rr as { events?: ExtractedMatch[] }).events)) {
+                          leagueEvents.push(...(rr as { events: ExtractedMatch[] }).events);
                         }
                       }
                     }
