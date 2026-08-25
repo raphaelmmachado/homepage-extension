@@ -67,7 +67,8 @@ export function UfcStatus() {
       const future = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
       const endStr = future.toISOString().slice(0, 10).replace(/-/g, "");
 
-      const { scoreboardData, rankingsData, ufcEventsHtml, ufcRankingsHtml } = await SportsDataClient.fetchUfcData(startStr, endStr);
+      const { scoreboardData, rankingsData, ufcEventsHtml, ufcRankingsHtml } =
+        await SportsDataClient.fetchUfcData(startStr, endStr);
 
       const ufcRankMap = parseUfcRankingsHtml(ufcRankingsHtml);
       const ufcPhotoMap = new Map([
@@ -142,7 +143,7 @@ export function UfcStatus() {
       {/* Header do Widget */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-gray-100 dark:border-gray-700/60 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-red-600 rounded-xl flex items-center justify-center shadow-sm p-1.5 flex-shrink-0">
+          <div className="w-10 h-10 bg-gray-900 dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm p-1.5 flex-shrink-0">
             <img
               src={UFC_LOGO_URL}
               alt="UFC"
@@ -160,13 +161,13 @@ export function UfcStatus() {
                   href="https://www.ufc.com.br/events"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {currentEvent.title || "UFC Events"}
                 </a>
               </h2>
               {currentEvent.subtitle && (
-                <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/40">
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
                   {currentEvent.subtitle}
                 </span>
               )}
@@ -200,7 +201,7 @@ export function UfcStatus() {
             <select
               value={selectedEventIndex}
               onChange={(e) => setSelectedEventIndex(Number(e.target.value))}
-              className="text-xs font-semibold bg-gray-100 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+              className="text-xs font-semibold bg-gray-100 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
             >
               {events.map((ev, idx) => (
                 <option key={ev.id || idx} value={idx}>
@@ -214,11 +215,11 @@ export function UfcStatus() {
           <button
             onClick={() => fetchUfcData(true)}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+            className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             title="Atualizar dados do UFC"
           >
             <svg
-              className={`w-4 h-4 ${loading ? "animate-spin text-red-500" : ""}`}
+              className={`w-4 h-4 ${loading ? "animate-spin text-gray-500" : ""}`}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -236,12 +237,12 @@ export function UfcStatus() {
       </div>
 
       {/* Banner de Transmissão */}
-      <div className="bg-gradient-to-r from-red-600/10 via-gray-100 to-transparent dark:from-red-950/40 dark:via-gray-800/40 dark:to-transparent border-l-4 border-red-600 p-3 rounded-r-xl mb-6 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="bg-gray-50 dark:bg-gray-700/30 border-l-2 border-gray-400 dark:border-gray-500 p-3 rounded-r-xl mb-6 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
-            📺 Onde Assistir:
+          <span className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            📺 Transmissão:
           </span>
-          <span className="font-semibold text-gray-800 dark:text-gray-200">
+          <span className="font-medium text-gray-800 dark:text-gray-200">
             {currentEvent.broadcast || "Paramount+ / UFC Fight Pass"}
           </span>
         </div>
@@ -253,9 +254,9 @@ export function UfcStatus() {
         {mainEvent && (
           <MainFightHighlightCard
             match={mainEvent}
-            tag="🏆 LUTA PRINCIPAL (MAIN EVENT)"
-            tagColor="bg-red-600 text-white"
-            accentBorder="border-red-500/50 dark:border-red-600/50"
+            tag="LUTA PRINCIPAL"
+            tagColor="bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 font-semibold"
+            accentBorder="border-gray-200 dark:border-gray-700"
             roundsInfo="5 Rounds"
           />
         )}
@@ -264,39 +265,26 @@ export function UfcStatus() {
         {coMainEvent && (
           <MainFightHighlightCard
             match={coMainEvent}
-            tag="🥊 LUTA CO-PRINCIPAL"
-            tagColor="bg-gray-800 text-gray-100 dark:bg-gray-700 dark:text-gray-200"
-            accentBorder="border-gray-300 dark:border-gray-700"
+            tag="LUTA CO-PRINCIPAL"
+            tagColor="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
+             border border-gray-200 dark:border-gray-600 font-semibold"
+            accentBorder="border-gray-200 dark:border-gray-700"
             roundsInfo="3 Rounds"
           />
         )}
       </div>
 
       {/* Seção Card Completo de Lutas */}
-      {currentEvent.allFights.length > 2 && (
-        <div className="border-t border-gray-200/80 dark:border-gray-700/70 pt-4 mt-4">
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="border-t border-gray-100 dark:border-gray-700/60 pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => setShowFullCard(!showFullCard)}
-              className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer group"
+              onClick={() => setShowFullCard((prev) => !prev)}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-700/70 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className={`w-4 h-4 text-red-600 transition-transform ${showFullCard ? "rotate-180" : ""}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
               <span>
                 {showFullCard
-                  ? "Ocultar Card Completo"
+                  ? "Recolher Card de Lutas"
                   : `Ver Card Completo (${currentEvent.allFights.length} lutas)`}
               </span>
             </button>
@@ -305,30 +293,30 @@ export function UfcStatus() {
               <div className="flex items-center gap-1.5 text-xs">
                 <button
                   onClick={() => setCardFilter("all")}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                     cardFilter === "all"
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                      ? "bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 shadow-xs"
+                      : "bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                   }`}
                 >
                   Todas ({currentEvent.allFights.length})
                 </button>
                 <button
                   onClick={() => setCardFilter("main")}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                     cardFilter === "main"
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                      ? "bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 shadow-xs"
+                      : "bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                   }`}
                 >
                   Card Principal
                 </button>
                 <button
                   onClick={() => setCardFilter("prelims")}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                     cardFilter === "prelims"
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                      ? "bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 shadow-xs"
+                      : "bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                   }`}
                 >
                   Preliminares
@@ -336,20 +324,17 @@ export function UfcStatus() {
               </div>
             )}
           </div>
-
-          {/* Grid de lutas completas */}
-          {showFullCard && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 animate-fadeIn">
-              {filteredFights.map((fight, idx) => (
-                <FightCardRow
-                  key={fight.id || idx}
-                  fight={fight}
-                />
-              ))}
-            </div>
-          )}
         </div>
-      )}
+
+        {/* Grid de lutas completas */}
+        {showFullCard && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 animate-fadeIn">
+            {filteredFights.map((fight, idx) => (
+              <FightCardRow key={fight.id || idx} fight={fight} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Rodapé com timestamp de atualização */}
       {lastUpdated && (
@@ -385,53 +370,54 @@ function MainFightHighlightCard({
 }: MainFightHighlightProps) {
   return (
     <div
-      className={`bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 sm:p-5 border-2 ${accentBorder} relative overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow`}
+      className={`bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 sm:p-5 border ${accentBorder} relative overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-sm transition-shadow`}
     >
-      {/* Cabeçalho da Luta */}
-      <div className="flex items-center justify-between gap-2 mb-3">
+      {/* Header do Card com Tag e Categoria */}
+      <div className="flex items-center justify-between gap-2 mb-4">
         <span
-          className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${tagColor}`}
+          className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${tagColor}`}
         >
           {tag}
         </span>
-        <div className="text-right">
-          <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
-            {match.categoryPt}
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
+          <span>{match.categoryPt}</span>
+          <span>•</span>
+          <span className="font-semibold text-gray-700 dark:text-gray-300">
+            {roundsInfo}
           </span>
-          {match.weightLimit && (
-            <span className="text-[10px] text-gray-500 dark:text-gray-400">
-              {match.weightLimit} • {roundsInfo}
-            </span>
-          )}
         </div>
       </div>
 
-      {/* Confronto dos Dois Lutadores */}
-      <div className="grid grid-cols-11 items-center gap-2 my-2">
+      {/* Confronto dos Lutadores (Lado a Lado) */}
+      <div className="flex items-center justify-between gap-2 sm:gap-4 my-auto">
         {/* Lutador 1 (Corner Vermelho) */}
-        <div className="col-span-5 flex flex-col items-center text-center">
-          <FighterHighlightProfile fighter={match.fighter1} corner="red" />
-        </div>
+        <FighterHighlightProfile fighter={match.fighter1} corner="red" />
 
-        {/* Centro VS */}
-        <div className="col-span-1 flex flex-col items-center justify-center">
-          <div className="w-8 h-8 rounded-full bg-red-600/10 dark:bg-red-950/60 border border-red-500/30 flex items-center justify-center">
-            <span className="text-xs font-black text-red-600 dark:text-red-400">
+        {/* Separador Central: VS */}
+        <div className="flex flex-col items-center justify-center flex-shrink-0 px-1">
+          <div className="w-8 h-8 rounded-full bg-gray-200/80 dark:bg-gray-800 flex items-center justify-center">
+            <span className="text-xs font-black text-gray-500 dark:text-gray-400 tracking-wider">
               VS
             </span>
           </div>
         </div>
 
         {/* Lutador 2 (Corner Azul) */}
-        <div className="col-span-5 flex flex-col items-center text-center">
-          <FighterHighlightProfile fighter={match.fighter2} corner="blue" />
-        </div>
+        <FighterHighlightProfile fighter={match.fighter2} corner="blue" />
+      </div>
+
+      {/* Rodapé da Luta com Categoria de Peso */}
+      <div className="mt-4 pt-3 border-t border-gray-200/60 dark:border-gray-800 text-center text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+        <span>Divisão:</span>
+        <span className="font-bold text-gray-800 dark:text-gray-200">
+          {match.weightLimit || match.categoryPt}
+        </span>
       </div>
     </div>
   );
 }
 
-// Perfil de Lutador em Destaque
+// Perfil de Lutador no Card Principal
 function FighterHighlightProfile({
   fighter,
   corner,
@@ -439,41 +425,36 @@ function FighterHighlightProfile({
   fighter: Fighter;
   corner: "red" | "blue";
 }) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const imgUrl =
-    !fighter.headshot || failedSrc === fighter.headshot
-      ? SILHOUETTE_IMG
-      : fighter.headshot;
-
   return (
-    <div className="flex flex-col items-center w-full">
-      {/* Foto do Atleta com Badge de Ranking */}
+    <div className="flex flex-col items-center flex-1 min-w-0">
+      {/* Foto com Borda do Corner e Badge de Ranking */}
       <div className="relative mb-2">
         <div
-          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gradient-to-b ${
+          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center border-2 ${
             corner === "red"
-              ? "from-red-100 to-red-200 dark:from-red-950/40 dark:to-red-900/20 border-2 border-red-500"
-              : "from-blue-100 to-blue-200 dark:from-blue-950/40 dark:to-blue-900/20 border-2 border-blue-500"
-          } flex items-center justify-center shadow-sm`}
+              ? "border-rose-400 dark:border-rose-500"
+              : "border-sky-400 dark:border-sky-500"
+          }`}
         >
           <img
-            src={imgUrl}
+            src={fighter.headshot || SILHOUETTE_IMG}
             alt={fighter.name}
-            className="w-full h-full object-cover object-top scale-110 translate-y-1"
-            onError={() => setFailedSrc(fighter.headshot || "")}
-            loading="lazy"
+            className="w-full h-full object-cover object-top"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = SILHOUETTE_IMG;
+            }}
           />
         </div>
 
         {/* Badge de Ranking Sobreposto na Foto */}
         {fighter.ranking && (
           <div
-            className={`absolute -top-1 -right-1 px-2 py-0.5 rounded-full text-[10px] font-black shadow-md border ${
+            className={`absolute -top-1 -right-1 px-2 py-0.5 rounded-full text-[10px] font-black shadow-xs border ${
               fighter.ranking === "C"
                 ? "bg-amber-400 text-gray-950 border-amber-300"
                 : corner === "red"
-                  ? "bg-red-600 text-white border-red-500"
-                  : "bg-blue-600 text-white border-blue-500"
+                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                  : "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30"
             }`}
             title={
               fighter.ranking === "C"
@@ -488,7 +469,7 @@ function FighterHighlightProfile({
 
       {/* Nome do Lutador */}
       <h4
-        className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate max-w-full text-center mt-0.5"
+        className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate max-w-full text-center mt-0.5"
         title={fighter.name}
       >
         {fighter.name}
@@ -506,17 +487,10 @@ function FighterHighlightProfile({
             }}
           />
         )}
-        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+        <span className="text-[10px] text-gray-600 dark:text-gray-400 font-medium truncate">
           {fighter.country}
         </span>
       </div>
-
-      {/* Cartel Profissional */}
-      {fighter.record && (
-        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mt-1 bg-gray-200/60 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-          {fighter.record}
-        </span>
-      )}
     </div>
   );
 }
@@ -535,7 +509,7 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
                 className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-xs ${
                   fight.fighter1.ranking === "C"
                     ? "bg-amber-400 text-gray-950"
-                    : "bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50"
+                    : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
                 }`}
                 title={
                   fight.fighter1.ranking === "C"
@@ -543,7 +517,9 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
                     : `Posição no Ranking: ${fight.fighter1.ranking}`
                 }
               >
-                {fight.fighter1.ranking === "C" ? "👑 C" : fight.fighter1.ranking}
+                {fight.fighter1.ranking === "C"
+                  ? "👑 C"
+                  : fight.fighter1.ranking}
               </span>
             )}
             <span
@@ -552,22 +528,6 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
             >
               {fight.fighter1.name}
             </span>
-          </div>
-          <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-            {fight.fighter1.flagUrl && (
-              <img
-                src={fight.fighter1.flagUrl}
-                alt={fight.fighter1.country}
-                className="w-3.5 h-2.5 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            )}
-            <span className="truncate">{fight.fighter1.country}</span>
-            {fight.fighter1.record && (
-              <span className="flex-shrink-0">• {fight.fighter1.record}</span>
-            )}
           </div>
         </div>
       </div>
@@ -581,7 +541,7 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
           {fight.categoryPt}
         </span>
         {fight.isMainEvent ? (
-          <span className="text-[9px] font-extrabold text-red-600 dark:text-red-400 uppercase">
+          <span className="text-[9px] font-bold text-gray-700 dark:text-gray-300 uppercase">
             Principal
           </span>
         ) : fight.isCoMainEvent ? (
@@ -606,7 +566,7 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
                 className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-xs ${
                   fight.fighter2.ranking === "C"
                     ? "bg-amber-400 text-gray-950"
-                    : "bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50"
+                    : "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30"
                 }`}
                 title={
                   fight.fighter2.ranking === "C"
@@ -614,22 +574,10 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
                     : `Posição no Ranking: ${fight.fighter2.ranking}`
                 }
               >
-                {fight.fighter2.ranking === "C" ? "👑 C" : fight.fighter2.ranking}
+                {fight.fighter2.ranking === "C"
+                  ? "👑 C"
+                  : fight.fighter2.ranking}
               </span>
-            )}
-          </div>
-          <div className="flex items-center justify-end gap-1 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-            {fight.fighter2.record && <span className="flex-shrink-0">{fight.fighter2.record} •</span>}
-            <span className="truncate">{fight.fighter2.country}</span>
-            {fight.fighter2.flagUrl && (
-              <img
-                src={fight.fighter2.flagUrl}
-                alt={fight.fighter2.country}
-                className="w-3.5 h-2.5 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
             )}
           </div>
         </div>

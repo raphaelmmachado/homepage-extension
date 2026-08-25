@@ -407,35 +407,36 @@ export function FlamengoStatus() {
               <div className="w-full flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <table className="w-full text-xs text-left min-w-[320px]">
                   <thead>
-                    <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-600/60 text-[11px]">
-                      <th className="pb-1.5 font-medium w-6 text-center">#</th>
-                      <th className="pb-1.5 font-medium">Time</th>
-                      <th className="pb-1.5 font-semibold text-center w-7 text-gray-700 dark:text-gray-300">
-                        Pts
-                      </th>
-                      <th className="pb-1.5 font-medium text-center w-6">J</th>
-                      <th className="pb-1.5 font-medium text-center w-6">V</th>
-                      <th className="pb-1.5 font-medium text-center w-8">SG</th>
-                      <th className="pb-1.5 font-medium text-center w-24">
-                        Forma
-                      </th>
+                    <tr className="text-gray-400 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                      <th className="pb-2 font-medium w-8 text-center">#</th>
+                      <th className="pb-2 font-medium">Clube</th>
+                      <th className="pb-2 font-medium text-center">Pts</th>
+                      <th className="pb-2 font-medium text-center">J</th>
+                      <th className="pb-2 font-medium text-center">V</th>
+                      <th className="pb-2 font-medium text-center">SG</th>
+                      <th className="pb-2 font-medium text-center">Recente</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {activeChamp.standings.map((row) => (
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                    {(
+                      ((champViewMode[activeChamp.id] || "compact") ===
+                        "standings" &&
+                        activeChamp.fullStandings) ||
+                      activeChamp.standings
+                    ).map((row) => (
                       <tr
-                        key={`${row.teamId}-${row.teamName}-${row.position}`}
-                        className={`border-b border-gray-100 dark:border-gray-700/50 last:border-0 transition-colors ${
+                        key={row.position}
+                        className={`hover:bg-gray-100/50 dark:hover:bg-gray-700/40 transition-colors ${
                           row.isFlamengo
-                            ? "bg-red-50 dark:bg-red-900/25 font-bold text-gray-900 dark:text-white"
-                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/20"
+                            ? "bg-gray-100/80 dark:bg-gray-700/60 font-bold"
+                            : ""
                         }`}
                       >
-                        <td className="py-1.5 text-center font-semibold text-[11px]">
-                          {row.position}º
+                        <td className="py-1.5 text-center font-bold text-gray-500 dark:text-gray-400">
+                          {row.position}
                         </td>
-                        <td className="py-1.5">
-                          <div className="flex items-center gap-1.5 truncate max-w-[100px] sm:max-w-[120px]">
+                        <td className="py-1.5 font-medium text-gray-800 dark:text-gray-200">
+                          <div className="flex items-center gap-1.5">
                             {row.teamId && (
                               <img
                                 src={`https://api.sofascore.app/api/v1/team/${row.teamId}/image`}
@@ -480,10 +481,10 @@ export function FlamengoStatus() {
                                   key={idx}
                                   className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-extrabold leading-none ${
                                     res === "V"
-                                      ? "bg-emerald-500 text-white"
+                                      ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
                                       : res === "E"
-                                        ? "bg-gray-400 dark:bg-gray-500 text-white"
-                                        : "bg-rose-500 text-white"
+                                        ? "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                                        : "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30"
                                   }`}
                                   title={
                                     res === "V"

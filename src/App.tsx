@@ -12,6 +12,7 @@ import { TrendingStreams } from "./components/Widgets/TrendingStreams";
 import { FlamengoStatus } from "./components/Widgets/FlamengoStatus";
 import { UfcStatus } from "./components/Widgets/UfcStatus";
 import { WidgetsManager } from "./components/Widgets/WidgetsManager";
+import * as svgs from "./svgs";
 
 import { useDialog } from "./hooks/useDialog";
 import { useSettings } from "./hooks/useSettings";
@@ -204,11 +205,27 @@ function App() {
                   e.dataTransfer.dropEffect = "move";
                 }}
                 onDrop={handleDropOnActiveBoard}
-                className="cursor-pointer bg-white/40 dark:bg-gray-800/40 border-2 border-dashed border-gray-300/80 dark:border-gray-700/80 px-8 rounded-2xl hover:border-gray-400 dark:hover:border-gray-600 hover:bg-white dark:hover:bg-gray-800 transition-all flex items-center justify-center min-h-[148px] h-full"
+                className={`group/create-folder cursor-pointer rounded-2xl transition-all duration-300 ease-in-out flex flex-col items-center justify-center gap-3 min-h-[160px] h-full select-none
+                  ${
+                    activeContainers.length > 0
+                      ? "opacity-0 hover:opacity-100 hover:bg-white/80 dark:hover:bg-gray-800/70 hover:backdrop-blur-sm border-2 border-dashed border-transparent hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md px-6 py-8"
+                      : "opacity-100 bg-white/40 dark:bg-gray-800/30 hover:bg-white/80 dark:hover:bg-gray-800/70 backdrop-blur-sm border-2 border-dashed border-gray-300/70 dark:border-gray-700/70 hover:border-gray-400 dark:hover:border-gray-500 px-6 py-8 shadow-sm hover:shadow-md"
+                  }`}
               >
-                <h2 className="text-xl font-bold text-gray-400 dark:text-gray-500 text-center">
-                  + Criar Pasta
-                </h2>
+                <div className="w-12 h-12 rounded-2xl bg-gray-100/80 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 group-hover/create-folder:bg-gray-200/80 dark:group-hover/create-folder:bg-gray-600 group-hover/create-folder:text-gray-800 dark:group-hover/create-folder:text-gray-100 group-hover/create-folder:scale-110 flex items-center justify-center transition-all duration-300 shadow-sm border border-gray-200/60 dark:border-gray-700/60 group-hover/create-folder:border-gray-300 dark:group-hover/create-folder:border-gray-500">
+                  <div
+                    dangerouslySetInnerHTML={{ __html: svgs.folderPlusSVG }}
+                    className="w-6 h-6 flex items-center justify-center"
+                  />
+                </div>
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover/create-folder:text-gray-900 dark:group-hover/create-folder:text-white transition-colors duration-200">
+                    Criar Pasta
+                  </span>
+                  <span className="text-xs text-gray-400 dark:text-gray-400 mt-0.5">
+                    Adicionar nova categoria
+                  </span>
+                </div>
               </div>
             </div>
 

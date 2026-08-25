@@ -441,7 +441,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
               <button
                 type="button"
                 onClick={() => setShowTrailer(true)}
-                className="bg-blue-600 text-white font-medium py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors text-sm flex items-center gap-1.5 shadow-sm cursor-pointer"
+                className="bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 font-medium py-2 px-4 rounded-xl transition-colors text-sm flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />

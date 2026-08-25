@@ -434,7 +434,7 @@ export function evaluateKnockoutStatus(
     return {
       outcome: "in_progress",
       label: "Em Disputa",
-      badgeColor: "bg-purple-600",
+      badgeColor: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-medium",
     };
   }
 
@@ -454,7 +454,7 @@ export function evaluateKnockoutStatus(
     return {
       outcome: "in_progress",
       label: isFinal ? "Final em Disputa" : "Em Andamento",
-      badgeColor: "bg-purple-600 text-white font-bold",
+      badgeColor: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-medium",
     };
   }
 
@@ -506,7 +506,7 @@ export function evaluateKnockoutStatus(
         return {
           outcome: "in_progress",
           label: "1º jogo realizado",
-          badgeColor: "bg-purple-600 text-white font-medium",
+          badgeColor: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-medium",
         };
       }
     }
@@ -517,13 +517,13 @@ export function evaluateKnockoutStatus(
       return {
         outcome: "champion",
         label: "Campeão!",
-        badgeColor: "bg-amber-500 text-gray-950 font-bold",
+        badgeColor: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold",
       };
     } else {
       return {
         outcome: "qualified",
         label: "Classificado para próxima fase",
-        badgeColor: "bg-emerald-600 text-white font-medium",
+        badgeColor: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-medium",
       };
     }
   } else {
@@ -531,13 +531,13 @@ export function evaluateKnockoutStatus(
       return {
         outcome: "runner_up",
         label: "Vice-Campeão",
-        badgeColor: "bg-gray-500 text-white font-medium",
+        badgeColor: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium",
       };
     } else {
       return {
         outcome: "eliminated",
         label: "Eliminado",
-        badgeColor: "bg-rose-600 text-white font-medium",
+        badgeColor: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-medium",
       };
     }
   }

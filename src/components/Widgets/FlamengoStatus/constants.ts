@@ -15,7 +15,7 @@ export const DEFAULT_MOCK_MATCH: NextMatch = {
 
 export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
 export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
-export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v26`;
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-b1`;
 export const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas de cache
 
 export const MOCK_BRASILEIRAO_STANDINGS = [
@@ -89,7 +89,7 @@ export const TOURNAMENTS_CONFIG: TournamentConfig[] = [
     slug: "brasileirao-serie-a",
     isLeague: true,
     defaultPhase: "Tabela Série A 2026",
-    defaultColor: "bg-green-600 text-white",
+    defaultColor: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold",
   },
   {
     id: 384,
@@ -98,7 +98,7 @@ export const TOURNAMENTS_CONFIG: TournamentConfig[] = [
     slug: "conmebol-libertadores",
     isLeague: false,
     defaultPhase: "Fase Eliminatória",
-    defaultColor: "bg-yellow-600 text-white",
+    defaultColor: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold",
   },
   {
     id: 373,
@@ -107,7 +107,7 @@ export const TOURNAMENTS_CONFIG: TournamentConfig[] = [
     slug: "copa-do-brasil",
     isLeague: false,
     defaultPhase: "Mata-mata",
-    defaultColor: "bg-purple-600 text-white",
+    defaultColor: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold",
   },
 ];
 
@@ -118,7 +118,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     name: "Brasileirão",
     status: "2º Lugar (46 pts)",
     phase: "Rodada 24 • Série A 2026",
-    color: "bg-emerald-600 text-white font-bold",
+    color: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold",
     isLeague: true,
     standings: MOCK_BRASILEIRAO_STANDINGS.slice(0, 6),
     fullStandings: MOCK_BRASILEIRAO_STANDINGS,
@@ -129,7 +129,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     name: "Libertadores",
     status: "Quartas de Final",
     phase: "Mata-Mata Eliminatório 2026",
-    color: "bg-amber-600 text-white font-bold",
+    color: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold",
     isLeague: false,
     hasKnockout: true,
     hasGroups: true,
@@ -165,7 +165,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     name: "Copa do Brasil",
     status: "Quartas de Final",
     phase: "Mata-Mata Eliminatório 2026",
-    color: "bg-purple-600 text-white font-bold",
+    color: "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold",
     isLeague: false,
     hasKnockout: true,
     knockout: {

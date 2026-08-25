@@ -18,6 +18,10 @@ export function TopSites({
   onClickBookmark,
   openAddBookmark,
 }: Props) {
+  if (automaticTopSites.length === 0 && manualTopSites.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md mb-6 relative transition-all w-full col-span-full">
       <div className="flex justify-between items-center mb-4">

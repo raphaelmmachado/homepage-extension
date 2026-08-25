@@ -668,6 +668,10 @@ export function useFlamengoStatus() {
                       miniStandingsList = mappedRows.slice(startIdx, endIdx);
                     }
                   }
+
+                  if (fullStandingsList.length > 0 || groupTablesList.length > 0) {
+                    break;
+                  }
                 }
               } catch {
                 // Ignore standings error

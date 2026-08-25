@@ -249,10 +249,10 @@ export function TrendingStreams() {
             <button
               key={provider.id}
               onClick={() => setActiveTab(provider.id)}
-              className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === provider.id
-                  ? provider.color + " shadow-md scale-105"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  ? "bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 shadow-sm"
+                  : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               {provider.name}
