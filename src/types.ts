@@ -26,6 +26,9 @@ export const STORAGE_KEYS = {
   SEARCH_ENGINE: "my-homepage-search-engine",
   LAYOUT: "my-homepage-layout",
   THEME: "my-homepage-theme",
-  VISIBLE_GADGETS: "my-homepage-visible-gadgets",
+  VISIBLE_WIDGETS: "my-homepage-visible-widgets",
+  ARCHIVED_CONTAINERS: "my-homepage-archived-containers",
+  CONTAINERS_ORDER: "my-homepage-containers-order",
 };
+
 

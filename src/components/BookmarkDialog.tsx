@@ -53,7 +53,7 @@ function BookmarkDialogContent({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-200/80 dark:border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
           {editingBookmark ? "Editar Favorito" : "Adicionar Novo Favorito"}
         </h3>
@@ -69,7 +69,7 @@ function BookmarkDialogContent({
                 editingBookmark?.name || editingBookmark?.title || ""
               }
               required
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="Ex: Google"
             />
           </div>
@@ -84,7 +84,7 @@ function BookmarkDialogContent({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="Ex: google.com"
             />
           </div>
@@ -113,7 +113,7 @@ function BookmarkDialogContent({
               name="customIcon"
               value={customIcon}
               onChange={handleCustomIconChange}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="OPCIONAL: Link da imagem (https://...)"
             />
             {sizeError && (
@@ -121,8 +121,8 @@ function BookmarkDialogContent({
             )}
 
             {/* Preview do Ícone */}
-            <div className="mt-2.5 flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 p-1 shrink-0">
+            <div className="mt-2.5 flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-1 shrink-0">
                 <img
                   src={activeIconSrc}
                   alt="Prévia do Ícone"
@@ -162,7 +162,7 @@ function BookmarkDialogContent({
               type="text"
               name="description"
               defaultValue={editingBookmark?.description || ""}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="OPCIONAL: Breve descrição do site"
             />
           </div>
@@ -172,7 +172,7 @@ function BookmarkDialogContent({
               <button
                 type="button"
                 onClick={onDelete}
-                className="bg-red-600 text-white font-medium py-2 px-3.5 rounded-lg hover:bg-red-700 transition-colors mr-auto text-sm"
+                className="bg-red-600 text-white font-medium py-2 px-3.5 rounded-xl hover:bg-red-700 transition-colors mr-auto text-sm shadow-sm"
               >
                 Excluir
               </button>
@@ -180,14 +180,14 @@ function BookmarkDialogContent({
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
+              className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={!!sizeError}
-              className="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
+              className="bg-blue-600 text-white font-medium py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 shadow-sm"
             >
               Salvar
             </button>

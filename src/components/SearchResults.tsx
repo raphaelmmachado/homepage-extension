@@ -29,7 +29,7 @@ export function SearchResults({
       onKeyDown={handleSearchResultsKeyDown}
       ref={searchResultsRef}
     >
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md w-full">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-600 dark:text-gray-400">
             🔍 Sites encontrados
@@ -70,7 +70,7 @@ export function SearchResults({
                       );
                     }
                   }}
-                  className="flex items-center gap-3 my-1 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-3 my-1 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div dangerouslySetInnerHTML={{ __html: option.icon }} />
                   <span className="text-gray-700 dark:text-gray-200 text-lg">

@@ -27,7 +27,7 @@ export const CustomDialog = ({ dialog }: { dialog: DialogConfig }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/80 dark:border-gray-700 p-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
           {dialog.title}
         </h3>
@@ -43,7 +43,7 @@ export const CustomDialog = ({ dialog }: { dialog: DialogConfig }) => {
             autoFocus
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 mb-4 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 mb-4 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             onKeyDown={(e) => {
               if (e.key === "Enter") dialog.onConfirm?.(inputValue);
               if (e.key === "Escape") dialog.onCancel?.();
@@ -55,7 +55,7 @@ export const CustomDialog = ({ dialog }: { dialog: DialogConfig }) => {
           {(isConfirm || isPrompt) && (
             <button
               onClick={() => dialog.onCancel?.()}
-              className="px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+              className="px-4 py-2 rounded-xl text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
             >
               Cancelar
             </button>
@@ -64,7 +64,7 @@ export const CustomDialog = ({ dialog }: { dialog: DialogConfig }) => {
             onClick={() =>
               dialog.onConfirm?.(isPrompt ? inputValue : undefined)
             }
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors text-sm font-medium"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors text-sm font-medium shadow-sm"
           >
             OK
           </button>

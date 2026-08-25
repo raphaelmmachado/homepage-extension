@@ -24,7 +24,7 @@ type Props = {
   handleExport: () => void;
   handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
-  openGadgetsManager: () => void;
+  openWidgetsManager: () => void;
 };
 
 export function Header({
@@ -47,7 +47,7 @@ export function Header({
   handleExport,
   handleImport,
   fileInputRef,
-  openGadgetsManager,
+  openWidgetsManager,
 }: Props) {
   const engine = searchEngines[activeSearchEngine];
 
@@ -79,13 +79,13 @@ export function Header({
         </button>
 
         <button
-          onClick={openGadgetsManager}
+          onClick={openWidgetsManager}
           className="hidden sm:block text-gray-600 bg-white hover:bg-white/70 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 shadow-sm p-3 rounded-full transition-all"
-          title="Gerenciar Gadgets"
+          title="Gerenciar Widgets"
         >
           <div
             dangerouslySetInnerHTML={{
-              __html: svgs.gadgetsIconSvg,
+              __html: svgs.widgetsIconSvg,
             }}
           />
         </button>
@@ -175,16 +175,16 @@ export function Header({
                 </button>
                 <button
                   onClick={() => {
-                    openGadgetsManager();
+                    openWidgetsManager();
                     setIsMobileMenuOpen(false);
                   }}
                   className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <div
                     className="w-6 h-6 flex items-center justify-center"
-                    dangerouslySetInnerHTML={{ __html: svgs.gadgetsIconSvg }}
+                    dangerouslySetInnerHTML={{ __html: svgs.widgetsIconSvg }}
                   />
-                  <span>Gerenciar Gadgets</span>
+                  <span>Gerenciar Widgets</span>
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}

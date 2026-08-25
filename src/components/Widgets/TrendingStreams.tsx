@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { StreamDetailsModal } from "./StreamDetailsModal";
 
 export type StreamProvider =
   | "netflix"
@@ -7,14 +8,36 @@ export type StreamProvider =
   | "paramount-plus";
 
 interface StreamItem {
+  id: number;
+  mediaType: "movie" | "tv";
   title: string;
   image: string;
+  popularity?: number;
+  link?: string;
 }
+
+interface TmdbTrendingItem {
+  id?: number;
+  title?: string;
+  original_title?: string;
+  name?: string;
+  original_name?: string;
+  poster_path?: string;
+  popularity?: number;
+}
+
 
 interface CacheData {
   timestamp: number;
   data: Record<StreamProvider, StreamItem[]>;
 }
+
+const PROVIDER_TMDB_IDS: Record<StreamProvider, number> = {
+  netflix: 8,
+  "amazon-prime-video": 119,
+  max: 1899,
+  "paramount-plus": 531,
+};
 
 const PROVIDERS: { id: StreamProvider; name: string; color: string }[] = [
   {
@@ -39,11 +62,12 @@ const PROVIDERS: { id: StreamProvider; name: string; color: string }[] = [
   },
 ];
 
-const CACHE_KEY = "my-homepage-trending-streams-v3";
+const CACHE_KEY = "my-homepage-trending-streams-v4";
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
 
 export function TrendingStreams() {
   const [activeTab, setActiveTab] = useState<StreamProvider>("netflix");
+  const [selectedStream, setSelectedStream] = useState<StreamItem | null>(null);
   const [streams, setStreams] = useState<Record<StreamProvider, StreamItem[]>>(() => {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -79,42 +103,53 @@ export function TrendingStreams() {
     provider: StreamProvider,
   ): Promise<StreamItem[]> => {
     try {
-      const res = await fetch(
-        `https://www.justwatch.com/br/provedor/${provider}`,
-        {
-          headers: {
-            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-          },
-        },
-      );
-      if (!res.ok) return [];
-      const html = await res.text();
+      const pId = PROVIDER_TMDB_IDS[provider];
+      const apiKey =
+        import.meta.env.VITE_TMDB_API_KEY ||
+        import.meta.env.TMDB_API_KEY ||
+        "3f463306e67d09f9203dcc85fbb35b41";
 
-      const imgRegex = /<img[^>]+alt="([^"]+)"[^>]+src="([^"]+poster[^"]+)"/gi;
-      let match;
-      const results: StreamItem[] = [];
-      const seen = new Set<string>();
+      const [moviesRes, tvRes] = await Promise.all([
+        fetch(
+          `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=pt-BR&region=BR&sort_by=popularity.desc&watch_region=BR&with_watch_providers=${pId}&include_adult=false&page=1`,
+        ),
+        fetch(
+          `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&language=pt-BR&region=BR&sort_by=popularity.desc&watch_region=BR&with_watch_providers=${pId}&include_adult=false&page=1`,
+        ),
+      ]);
 
-      while ((match = imgRegex.exec(html)) !== null && results.length < 10) {
-        const title = match[1];
-        let image = match[2];
+      const [moviesData, tvData] = await Promise.all([
+        moviesRes.ok ? moviesRes.json() : { results: [] },
+        tvRes.ok ? tvRes.json() : { results: [] },
+      ]);
 
-        if (!title || !image) continue;
+      const combined: StreamItem[] = [
+        ...(moviesData.results || []).map((m: TmdbTrendingItem) => ({
+          id: m.id || 0,
+          mediaType: "movie" as const,
+          title: m.title || m.original_title || "",
+          image: m.poster_path
+            ? `https://image.tmdb.org/t/p/w342${m.poster_path}`
+            : "",
+          popularity: m.popularity || 0,
+        })),
+        ...(tvData.results || []).map((t: TmdbTrendingItem) => ({
+          id: t.id || 0,
+          mediaType: "tv" as const,
+          title: t.name || t.original_name || "",
+          image: t.poster_path
+            ? `https://image.tmdb.org/t/p/w342${t.poster_path}`
+            : "",
+          popularity: t.popularity || 0,
+        })),
+      ]
+        .filter((item) => !!item.image && !!item.title)
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 15);
 
-        // Fix relative URLs if any, though JustWatch usually has absolute ones
-        if (image.startsWith("/")) {
-          image = `https://images.justwatch.com${image}`;
-        }
-
-        // Avoid duplicates that appear in DOM
-        if (!seen.has(title)) {
-          seen.add(title);
-          results.push({ title, image });
-        }
-      }
-      return results;
+      return combined;
     } catch (err) {
-      console.error(`Erro ao buscar dados de ${provider}:`, err);
+      console.error(`Erro ao buscar dados de ${provider} no TMDB:`, err);
       return [];
     }
   };
@@ -203,7 +238,7 @@ export function TrendingStreams() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md transition-all mb-6 relative group/carousel">
+    <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative group/carousel">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
           Destaques de Streaming
@@ -226,23 +261,21 @@ export function TrendingStreams() {
           <button
             onClick={() => fetchAllProviders(streams)}
             disabled={loading}
-            className="p-2 rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-all duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center"
-            title="Atualizar dados agora"
+            className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            title="Atualizar destaques"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
+              className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              className={`transition-transform duration-500 ${loading ? "animate-spin text-blue-500" : "hover:rotate-180"}`}
+              viewBox="0 0 24 24"
             >
-              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-              <path d="M21 3v5h-5" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
           </button>
         </div>
@@ -268,16 +301,17 @@ export function TrendingStreams() {
             currentItems.map((item, index) => (
               <div
                 key={index}
-                className="min-w-[120px] max-w-[120px] sm:min-w-[140px] sm:max-w-[140px] flex-none snap-start group relative rounded-lg overflow-hidden cursor-pointer"
+                className="min-w-[120px] max-w-[120px] sm:min-w-[140px] sm:max-w-[140px] flex-none snap-start group relative rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow"
                 title={item.title}
+                onClick={() => setSelectedStream(item)}
               >
-                <div className="absolute top-1 left-1 bg-black/70 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center z-10 backdrop-blur-sm shadow-lg border border-white/10">
+                <div className="absolute top-1.5 left-1.5 bg-black/70 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center z-10 backdrop-blur-sm shadow-lg border border-white/10">
                   {index + 1}
                 </div>
                 <img
                   src={item.image.replace("s332", "s166")} // Optimizando tamanho da imagem
                   alt={item.title}
-                  className="w-full aspect-[2/3] object-cover rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300"
+                  className="w-full aspect-[2/3] object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
@@ -315,6 +349,12 @@ export function TrendingStreams() {
           })}{" "}
           • Atualização automática a cada 24h
         </div>
+      )}
+      {selectedStream && (
+        <StreamDetailsModal
+          item={selectedStream}
+          onClose={() => setSelectedStream(null)}
+        />
       )}
     </div>
   );

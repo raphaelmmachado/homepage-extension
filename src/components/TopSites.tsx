@@ -19,7 +19,7 @@ export function TopSites({
   openAddBookmark,
 }: Props) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6 relative transition-all w-full col-span-full">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md mb-6 relative transition-all w-full col-span-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
           Mais Acessados
@@ -66,7 +66,7 @@ export function TopSites({
             {provided.placeholder}
             <button
               onClick={() => openAddBookmark("top-sites")}
-              className={`flex p-2 items-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300 flex-col justify-center w-20 ${manualTopSites.length + automaticTopSites.length > 0 ? "opacity-0 hover:opacity-100" : ""}`}
+              className={`flex p-2 items-center rounded-xl hover:bg-gray-200/70 dark:hover:bg-gray-700/50 cursor-pointer text-gray-500 transition-all duration-300 flex-col justify-center w-20 ${manualTopSites.length + automaticTopSites.length > 0 ? "opacity-0 hover:opacity-100" : ""}`}
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-md border-2 border-dashed border-gray-400 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-600 transition-colors">
                 <div
