@@ -179,7 +179,7 @@ export const KNOWN_CLUBS: Record<string, ClubConfig> = {
 };
 
 export function getFavoriteClub(): ClubConfig {
-  const envVal = (import.meta.env.VITE_FAV_CLUB || "Flamengo").toString().trim();
+  const envVal = (typeof import.meta.env !== "undefined" && import.meta.env.VITE_FAV_CLUB ? import.meta.env.VITE_FAV_CLUB : "flamengo").toString().trim();
   const normalized = envVal
     .toLowerCase()
     .normalize("NFD")
