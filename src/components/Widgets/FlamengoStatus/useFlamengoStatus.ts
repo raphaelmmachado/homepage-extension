@@ -29,6 +29,7 @@ import {
   normalizeString,
 } from "./utils";
 import { SportsDataClient } from "../../../services/SportsDataClient";
+import { ACTIVE_CLUB } from "./clubConfig";
 
 export function useFlamengoStatus() {
   const [initialData] = useState(getInitialCachedData);
@@ -297,7 +298,13 @@ export function useFlamengoStatus() {
             }
 
             const seasonsData = await seasonsRes.json();
-            const seasons = seasonsData.seasons || [];
+            const seasons = (seasonsData.seasons || []).sort((a: { year?: string; name?: string; id?: number }, b: { year?: string; name?: string; id?: number }) => {
+              const is2026A = a.year === "2026" || (a.name && a.name.includes("2026")) || a.id === 87678 || a.id === 87760 || a.id === 89353;
+              const is2026B = b.year === "2026" || (b.name && b.name.includes("2026")) || b.id === 87678 || b.id === 87760 || b.id === 89353;
+              if (is2026A && !is2026B) return -1;
+              if (!is2026A && is2026B) return 1;
+              return 0;
+            });
 
             if (seasons.length === 0) {
               return {
@@ -893,5 +900,5 @@ export function useFlamengoStatus() {
   const awayPos = nextMatch.isHome ? oppPos : flaPos;
 
 
-  return { initialData, activeTab, setActiveTab, champViewMode, setChampViewMode, loading, lastUpdated, nextMatch, championships, fetchSofascoreData, homePos, awayPos, activeChamp, showPositions };
+  return { initialData, activeTab, setActiveTab, champViewMode, setChampViewMode, loading, lastUpdated, nextMatch, championships, fetchSofascoreData, homePos, awayPos, activeChamp, showPositions, activeClub: ACTIVE_CLUB };
 }

@@ -1,4 +1,7 @@
 import type { NextMatch, Championship } from "./types";
+import { ACTIVE_CLUB } from "./clubConfig";
+
+export { ACTIVE_CLUB };
 
 export const DEFAULT_MOCK_MATCH: NextMatch = {
   opponent: "Carregando...",
@@ -10,32 +13,32 @@ export const DEFAULT_MOCK_MATCH: NextMatch = {
   stadium: "Buscando...",
 };
 
-export const SOFASCORE_TEAM_ID = 5981; // ID Oficial do Flamengo no Sofascore
-export const FLAMENGO_LOGO_URL = `https://api.sofascore.app/api/v1/team/${SOFASCORE_TEAM_ID}/image`;
-export const CACHE_KEY = "my-homepage-flamengo-sofascore-v25";
+export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
+export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v26`;
 export const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas de cache
 
 export const MOCK_BRASILEIRAO_STANDINGS = [
-  { position: 1, teamId: 1958, teamName: "Botafogo", points: 73, matches: 38, wins: 22, draws: 7, losses: 9, goalDiff: 28, form: ["V", "V", "E", "V", "D"], isFlamengo: false },
-  { position: 2, teamId: 1963, teamName: "Palmeiras", points: 70, matches: 38, wins: 21, draws: 7, losses: 10, goalDiff: 26, form: ["V", "E", "V", "V", "V"], isFlamengo: false },
-  { position: 3, teamId: 5981, teamName: "Flamengo", points: 66, matches: 38, wins: 19, draws: 9, losses: 10, goalDiff: 20, form: ["V", "V", "E", "V", "V"], isFlamengo: true },
-  { position: 4, teamId: 2020, teamName: "Fortaleza", points: 65, matches: 38, wins: 18, draws: 11, losses: 9, goalDiff: 15, form: ["E", "V", "D", "V", "E"], isFlamengo: false },
-  { position: 5, teamId: 1977, teamName: "Internacional", points: 62, matches: 38, wins: 17, draws: 11, losses: 10, goalDiff: 14, form: ["V", "V", "V", "E", "D"], isFlamengo: false },
-  { position: 6, teamId: 1981, teamName: "São Paulo", points: 59, matches: 38, wins: 17, draws: 8, losses: 13, goalDiff: 12, form: ["D", "V", "E", "D", "V"], isFlamengo: false },
-  { position: 7, teamId: 1955, teamName: "Corinthians", points: 56, matches: 38, wins: 15, draws: 11, losses: 12, goalDiff: 8, form: ["V", "V", "V", "V", "V"], isFlamengo: false },
-  { position: 8, teamId: 1961, teamName: "Bahia", points: 53, matches: 38, wins: 15, draws: 8, losses: 15, goalDiff: 3, form: ["D", "V", "D", "V", "E"], isFlamengo: false },
-  { position: 9, teamId: 1954, teamName: "Cruzeiro", points: 52, matches: 38, wins: 14, draws: 10, losses: 14, goalDiff: 2, form: ["E", "D", "V", "E", "D"], isFlamengo: false },
-  { position: 10, teamId: 1976, teamName: "Vasco da Gama", points: 50, matches: 38, wins: 14, draws: 8, losses: 16, goalDiff: -4, form: ["D", "V", "D", "D", "V"], isFlamengo: false },
-  { position: 11, teamId: 1974, teamName: "Vitória", points: 47, matches: 38, wins: 13, draws: 8, losses: 17, goalDiff: -7, form: ["V", "D", "V", "D", "E"], isFlamengo: false },
-  { position: 12, teamId: 1975, teamName: "Atlético Mineiro", points: 47, matches: 38, wins: 11, draws: 14, losses: 13, goalDiff: -2, form: ["D", "E", "D", "D", "V"], isFlamengo: false },
-  { position: 13, teamId: 1967, teamName: "Fluminense", points: 46, matches: 38, wins: 12, draws: 10, losses: 16, goalDiff: -6, form: ["V", "E", "D", "E", "V"], isFlamengo: false },
-  { position: 14, teamId: 1959, teamName: "Grêmio", points: 45, matches: 38, wins: 12, draws: 9, losses: 17, goalDiff: -5, form: ["D", "V", "D", "E", "D"], isFlamengo: false },
-  { position: 15, teamId: 1999, teamName: "Juventude", points: 45, matches: 38, wins: 11, draws: 12, losses: 15, goalDiff: -8, form: ["E", "D", "V", "E", "D"], isFlamengo: false },
-  { position: 16, teamId: 1998, teamName: "Red Bull Bragantino", points: 44, matches: 38, wins: 10, draws: 14, losses: 14, goalDiff: -5, form: ["V", "E", "D", "E", "E"], isFlamengo: false },
-  { position: 17, teamId: 1962, teamName: "Athletico Paranaense", points: 42, matches: 38, wins: 11, draws: 9, losses: 18, goalDiff: -6, form: ["D", "D", "V", "D", "D"], isFlamengo: false },
-  { position: 18, teamId: 1984, teamName: "Criciúma", points: 38, matches: 38, wins: 9, draws: 11, losses: 18, goalDiff: -13, form: ["D", "D", "D", "D", "E"], isFlamengo: false },
-  { position: 19, teamId: 1982, teamName: "Atlético Goianiense", points: 30, matches: 38, wins: 7, draws: 9, losses: 22, goalDiff: -24, form: ["E", "D", "D", "V", "D"], isFlamengo: false },
-  { position: 20, teamId: 1987, teamName: "Cuiabá", points: 30, matches: 38, wins: 6, draws: 12, losses: 20, goalDiff: -23, form: ["D", "D", "D", "E", "D"], isFlamengo: false },
+  { position: 1, teamId: 1958, teamName: "Botafogo", points: 47, matches: 23, wins: 14, draws: 5, losses: 4, goalDiff: 18, form: ["V", "V", "E", "V", "D"], isFlamengo: ACTIVE_CLUB.id === 1958 },
+  { position: 2, teamId: 5981, teamName: "Flamengo", points: 46, matches: 22, wins: 14, draws: 4, losses: 4, goalDiff: 17, form: ["V", "V", "E", "V", "V"], isFlamengo: ACTIVE_CLUB.id === 5981 },
+  { position: 3, teamId: 1963, teamName: "Palmeiras", points: 44, matches: 23, wins: 13, draws: 5, losses: 5, goalDiff: 15, form: ["V", "E", "V", "V", "V"], isFlamengo: ACTIVE_CLUB.id === 1963 },
+  { position: 4, teamId: 2020, teamName: "Fortaleza", points: 42, matches: 22, wins: 12, draws: 6, losses: 4, goalDiff: 10, form: ["E", "V", "D", "V", "E"], isFlamengo: ACTIVE_CLUB.id === 2020 },
+  { position: 5, teamId: 1981, teamName: "São Paulo", points: 38, matches: 23, wins: 11, draws: 5, losses: 7, goalDiff: 8, form: ["D", "V", "E", "D", "V"], isFlamengo: ACTIVE_CLUB.id === 1981 },
+  { position: 6, teamId: 1954, teamName: "Cruzeiro", points: 37, matches: 23, wins: 11, draws: 4, losses: 8, goalDiff: 6, form: ["E", "D", "V", "E", "D"], isFlamengo: ACTIVE_CLUB.id === 1954 },
+  { position: 7, teamId: 1961, teamName: "Bahia", points: 36, matches: 23, wins: 10, draws: 6, losses: 7, goalDiff: 4, form: ["D", "V", "D", "V", "E"], isFlamengo: ACTIVE_CLUB.id === 1961 },
+  { position: 8, teamId: 1977, teamName: "Internacional", points: 35, matches: 22, wins: 9, draws: 8, losses: 5, goalDiff: 5, form: ["V", "V", "V", "E", "D"], isFlamengo: ACTIVE_CLUB.id === 1977 },
+  { position: 9, teamId: 1975, teamName: "Atlético Mineiro", points: 33, matches: 22, wins: 8, draws: 9, losses: 5, goalDiff: 3, form: ["D", "E", "D", "D", "V"], isFlamengo: ACTIVE_CLUB.id === 1975 },
+  { position: 10, teamId: 1976, teamName: "Vasco da Gama", points: 31, matches: 23, wins: 9, draws: 4, losses: 10, goalDiff: -2, form: ["D", "V", "D", "D", "V"], isFlamengo: ACTIVE_CLUB.id === 1976 },
+  { position: 11, teamId: 1998, teamName: "Red Bull Bragantino", points: 30, matches: 23, wins: 8, draws: 6, losses: 9, goalDiff: -1, form: ["V", "E", "D", "E", "E"], isFlamengo: ACTIVE_CLUB.id === 1998 },
+  { position: 12, teamId: 1962, teamName: "Athletico Paranaense", points: 29, matches: 23, wins: 8, draws: 5, losses: 10, goalDiff: -3, form: ["D", "D", "V", "D", "D"], isFlamengo: ACTIVE_CLUB.id === 1962 },
+  { position: 13, teamId: 1959, teamName: "Grêmio", points: 28, matches: 22, wins: 8, draws: 4, losses: 10, goalDiff: -4, form: ["D", "V", "D", "E", "D"], isFlamengo: ACTIVE_CLUB.id === 1959 },
+  { position: 14, teamId: 1999, teamName: "Juventude", points: 27, matches: 23, wins: 7, draws: 6, losses: 10, goalDiff: -6, form: ["E", "D", "V", "E", "D"], isFlamengo: ACTIVE_CLUB.id === 1999 },
+  { position: 15, teamId: 1984, teamName: "Criciúma", points: 26, matches: 23, wins: 6, draws: 8, losses: 9, goalDiff: -7, form: ["D", "D", "D", "D", "E"], isFlamengo: ACTIVE_CLUB.id === 1984 },
+  { position: 16, teamId: 1967, teamName: "Fluminense", points: 25, matches: 23, wins: 6, draws: 7, losses: 10, goalDiff: -8, form: ["V", "E", "D", "E", "V"], isFlamengo: ACTIVE_CLUB.id === 1967 },
+  { position: 17, teamId: 1955, teamName: "Corinthians", points: 23, matches: 23, wins: 5, draws: 8, losses: 10, goalDiff: -9, form: ["V", "V", "V", "V", "V"], isFlamengo: ACTIVE_CLUB.id === 1955 },
+  { position: 18, teamId: 1974, teamName: "Vitória", points: 22, matches: 23, wins: 5, draws: 7, losses: 11, goalDiff: -11, form: ["V", "D", "V", "D", "E"], isFlamengo: ACTIVE_CLUB.id === 1974 },
+  { position: 19, teamId: 1987, teamName: "Cuiabá", points: 19, matches: 22, wins: 4, draws: 7, losses: 11, goalDiff: -13, form: ["D", "D", "D", "E", "D"], isFlamengo: ACTIVE_CLUB.id === 1987 },
+  { position: 20, teamId: 1982, teamName: "Atlético Goianiense", points: 15, matches: 23, wins: 3, draws: 6, losses: 14, goalDiff: -17, form: ["E", "D", "D", "V", "D"], isFlamengo: ACTIVE_CLUB.id === 1982 },
 ];
 
 export const MOCK_LIBERTADORES_GROUPS = [
@@ -43,7 +46,7 @@ export const MOCK_LIBERTADORES_GROUPS = [
     groupName: "Grupo E",
     rows: [
       { position: 1, teamId: 1980, teamName: "Bolívar", points: 13, matches: 6, wins: 4, draws: 1, losses: 1, goalDiff: 5, form: ["V", "V", "E", "D", "V"], isFlamengo: false },
-      { position: 2, teamId: 5981, teamName: "Flamengo", points: 10, matches: 6, wins: 3, draws: 1, losses: 2, goalDiff: 7, form: ["V", "V", "D", "V", "E"], isFlamengo: true },
+      { position: 2, teamId: 5981, teamName: "Flamengo", points: 10, matches: 6, wins: 3, draws: 1, losses: 2, goalDiff: 7, form: ["V", "V", "D", "V", "E"], isFlamengo: ACTIVE_CLUB.id === 5981 },
       { position: 3, teamId: 1992, teamName: "Palestino", points: 7, matches: 6, wins: 2, draws: 1, losses: 3, goalDiff: -5, form: ["E", "D", "V", "D", "D"], isFlamengo: false },
       { position: 4, teamId: 1986, teamName: "Millonarios", points: 3, matches: 6, wins: 0, draws: 3, losses: 3, goalDiff: -7, form: ["D", "E", "D", "E", "E"], isFlamengo: false },
     ],
@@ -85,7 +88,7 @@ export const TOURNAMENTS_CONFIG: TournamentConfig[] = [
     region: "brazil",
     slug: "brasileirao-serie-a",
     isLeague: true,
-    defaultPhase: "Tabela Principal",
+    defaultPhase: "Tabela Série A 2026",
     defaultColor: "bg-green-600 text-white",
   },
   {
@@ -113,8 +116,8 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     id: "tourn_325",
     url: "https://www.sofascore.com/pt/football/tournament/brazil/brasileirao-serie-a/325",
     name: "Brasileirão",
-    status: "3º Lugar (66 pts)",
-    phase: "Tabela Série A",
+    status: "2º Lugar (46 pts)",
+    phase: "Rodada 24 • Série A 2026",
     color: "bg-emerald-600 text-white font-bold",
     isLeague: true,
     standings: MOCK_BRASILEIRAO_STANDINGS.slice(0, 6),
@@ -125,7 +128,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     url: "https://www.sofascore.com/pt/football/tournament/south-america/conmebol-libertadores/384",
     name: "Libertadores",
     status: "Quartas de Final",
-    phase: "Mata-Mata Eliminatório",
+    phase: "Mata-Mata Eliminatório 2026",
     color: "bg-amber-600 text-white font-bold",
     isLeague: false,
     hasKnockout: true,
@@ -142,7 +145,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
           awayTeam: "Peñarol",
           awayTeamId: 1993,
           scoreDisplay: "Ida: 0 - 1",
-          date: "19/09/2024",
+          date: "19/09/2026",
         },
         {
           id: 810,
@@ -151,7 +154,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
           awayTeam: "Flamengo",
           awayTeamId: 5981,
           scoreDisplay: "Volta: 0 - 0",
-          date: "26/09/2024",
+          date: "26/09/2026",
         },
       ],
     },
@@ -161,7 +164,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
     url: "https://www.sofascore.com/pt/football/tournament/brazil/copa-do-brasil/373",
     name: "Copa do Brasil",
     status: "Quartas de Final",
-    phase: "Mata-Mata Eliminatório",
+    phase: "Mata-Mata Eliminatório 2026",
     color: "bg-purple-600 text-white font-bold",
     isLeague: false,
     hasKnockout: true,
@@ -176,7 +179,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
           awayTeam: "Flamengo",
           awayTeamId: 5981,
           scoreDisplay: "Ida: 0 - 1",
-          date: "28/08/2024",
+          date: "28/08/2026",
         },
         {
           id: 910,
@@ -185,7 +188,7 @@ export const DEFAULT_CHAMPIONSHIPS: Championship[] = [
           awayTeam: "Bahia",
           awayTeamId: 1961,
           scoreDisplay: "Volta: 1 - 0",
-          date: "12/09/2024",
+          date: "12/09/2026",
         },
       ],
     },
@@ -225,10 +228,6 @@ export const LFU_TEAMS = [
   "américa-mg",
   "america-mg",
 ];
-
-/**
- * Função recursiva para extrair todos os jogos de qualquer estrutura de chaves (cuptrees)
- */
 
 export const KNOWN_STADIUMS: Record<string, string> = {
   flamengo: "Maracanã",
