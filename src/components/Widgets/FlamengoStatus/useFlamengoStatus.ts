@@ -532,7 +532,82 @@ export function useFlamengoStatus() {
                   const standingsData = await standingsRes.json();
                   const allStandings = standingsData.standings || [];
 
-                  // Extrair forma do Flamengo a partir dos eventos finalizados como fallback
+                  // Busca todos os eventos da liga para calcular com precisão a forma recente (últimos 5 jogos) de TODOS os times
+                  const leagueTeamFormMap = new Map<number, string[]>();
+                  try {
+                    let leagueEvents: ExtractedMatch[] = [];
+                    const sEventsData = await SportsDataClient.fetchSeasonEvents(tourn.id, s.id);
+                    if (sEventsData && Array.isArray(sEventsData.events)) {
+                      leagueEvents = sEventsData.events;
+                    }
+
+                    if (leagueEvents.length === 0) {
+                      const roundsData = await SportsDataClient.fetchTournamentRounds(tourn.id, s.id);
+                      const rList = (roundsData?.rounds || []).slice(-5);
+                      const roundResults = await Promise.all(
+                        rList.map((rd: { round: number }) =>
+                          SportsDataClient.fetchRoundEvents(tourn.id, s.id, rd.round)
+                        )
+                      );
+                      for (const rr of roundResults) {
+                        if (rr && Array.isArray(rr.events)) {
+                          leagueEvents.push(...rr.events);
+                        }
+                      }
+                    }
+
+                    if (allTeamEvents.length > 0) {
+                      leagueEvents.push(...allTeamEvents);
+                    }
+
+                    const finishedLeagueMatches = leagueEvents.filter(
+                      (ev: ExtractedMatch) =>
+                        (ev.tournament?.uniqueTournament?.id === tourn.id ||
+                          ev.tournament?.name?.toLowerCase().includes("brasileir") ||
+                          ev.tournament?.name?.toLowerCase().includes("série a") ||
+                          ev.tournament?.name?.toLowerCase().includes("serie a")) &&
+                        (ev.status?.type === "finished" || ev.status?.type === "ended")
+                    );
+
+                    const uniqueFinished: ExtractedMatch[] = [];
+                    const seenMatchKeys = new Set<string>();
+                    for (const m of finishedLeagueMatches) {
+                      const key = `${m.id || ""}-${m.startTimestamp || ""}-${m.homeTeam?.id}-${m.awayTeam?.id}`;
+                      if (!seenMatchKeys.has(key)) {
+                        seenMatchKeys.add(key);
+                        uniqueFinished.push(m);
+                      }
+                    }
+
+                    uniqueFinished.sort((a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0));
+
+                    for (const table of allStandings) {
+                      for (const row of (table.rows || [])) {
+                        const tId = row.team?.id;
+                        if (!tId) continue;
+                        const tMatches = uniqueFinished.filter(
+                          (m) => m.homeTeam?.id === tId || m.awayTeam?.id === tId
+                        );
+                        if (tMatches.length > 0) {
+                          const f5 = tMatches.slice(-5).map((m) => {
+                            const isHome = m.homeTeam?.id === tId;
+                            const tScore = isHome
+                              ? (m.homeScore?.display ?? m.homeScore?.current ?? 0)
+                              : (m.awayScore?.display ?? m.awayScore?.current ?? 0);
+                            const oScore = isHome
+                              ? (m.awayScore?.display ?? m.awayScore?.current ?? 0)
+                              : (m.homeScore?.display ?? m.homeScore?.current ?? 0);
+                            return tScore > oScore ? "V" : tScore < oScore ? "D" : "E";
+                          });
+                          leagueTeamFormMap.set(tId, f5);
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.error("Erro ao processar forma dos times da liga:", e);
+                  }
+
+                  // Extrair forma do time favorito a partir dos eventos finalizados como fallback
                   const flaEventsFinished = allTeamEvents.filter(
                     (ev: ExtractedMatch) =>
                       (ev.tournament?.uniqueTournament?.id === tourn.id ||
@@ -588,28 +663,18 @@ export function useFlamengoStatus() {
 
                         if (
                           formList.length === 0 &&
+                          r.team?.id &&
+                          leagueTeamFormMap.has(r.team.id)
+                        ) {
+                          formList = leagueTeamFormMap.get(r.team.id)!;
+                        }
+
+                        if (
+                          formList.length === 0 &&
                           r.team?.id === SOFASCORE_TEAM_ID &&
                           flaFallbackForm.length > 0
                         ) {
                           formList = flaFallbackForm;
-                        }
-
-                        if (formList.length === 0) {
-                          const mockTeam = MOCK_BRASILEIRAO_STANDINGS.find(
-                            (m) =>
-                              (r.team?.id && m.teamId === r.team.id) ||
-                              (r.team?.name &&
-                                normalizeString(m.teamName).includes(
-                                  normalizeString(r.team.name),
-                                )) ||
-                              (r.team?.shortName &&
-                                normalizeString(m.teamName).includes(
-                                  normalizeString(r.team.shortName),
-                                )),
-                          );
-                          if (mockTeam && mockTeam.form && mockTeam.form.length > 0) {
-                            formList = mockTeam.form;
-                          }
                         }
 
                         return {
