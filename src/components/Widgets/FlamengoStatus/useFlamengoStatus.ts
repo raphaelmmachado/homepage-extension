@@ -75,6 +75,20 @@ export function useFlamengoStatus() {
   };
 
   const fetchSofascoreData = async (forceRefresh = false) => {
+    const isValid2026Match = (m: MatchSummary | NextMatch | null | undefined): boolean => {
+      if (!m) return false;
+      const dateStr = m.date || "";
+      if (
+        dateStr.includes("2024") ||
+        dateStr.includes("/24") ||
+        dateStr.includes("2025") ||
+        dateStr.includes("/25")
+      ) {
+        return false;
+      }
+      return true;
+    };
+
     if (!forceRefresh) {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -83,14 +97,22 @@ export function useFlamengoStatus() {
           const now = Date.now();
           const ttl = parsed.ttl || CACHE_TTL;
           if (now - parsed.timestamp < ttl) {
-            setNextMatch(parsed.match);
-            if (parsed.previousMatch) setPreviousMatch(parsed.previousMatch);
-            if (parsed.followingMatch) setFollowingMatch(parsed.followingMatch);
+            if (parsed.match && isValid2026Match(parsed.match)) {
+              setNextMatch(parsed.match);
+            }
+            if (parsed.previousMatch && isValid2026Match(parsed.previousMatch)) {
+              setPreviousMatch(parsed.previousMatch);
+            }
+            if (parsed.followingMatch && isValid2026Match(parsed.followingMatch)) {
+              setFollowingMatch(parsed.followingMatch);
+            }
             if (Array.isArray(parsed.previousMatches) && parsed.previousMatches.length > 0) {
-              setPreviousMatches(parsed.previousMatches);
+              const validPrev = parsed.previousMatches.filter(isValid2026Match);
+              if (validPrev.length > 0) setPreviousMatches(validPrev);
             }
             if (Array.isArray(parsed.followingMatches) && parsed.followingMatches.length > 0) {
-              setFollowingMatches(parsed.followingMatches);
+              const validFollow = parsed.followingMatches.filter(isValid2026Match);
+              if (validFollow.length > 0) setFollowingMatches(validFollow);
             }
             setChampionships(parsed.championships);
             setLastUpdated(parsed.timestamp);

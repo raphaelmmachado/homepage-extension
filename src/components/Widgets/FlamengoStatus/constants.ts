@@ -163,7 +163,7 @@ export const DEFAULT_FOLLOWING_MATCH: MatchSummary = DEFAULT_FOLLOWING_MATCHES[0
 
 export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
 export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
-export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-dynamicstack`;
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-clean2026-v4`;
 export const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas de cache
 
 export const MOCK_BRASILEIRAO_STANDINGS = [

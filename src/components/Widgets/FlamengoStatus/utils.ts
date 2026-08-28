@@ -616,6 +616,20 @@ export function getInitialCachedData(): {
   isStale: boolean;
   timestamp: number | null;
 } {
+  const isValid2026Match = (m: MatchSummary | NextMatch | null | undefined): boolean => {
+    if (!m) return false;
+    const dateStr = m.date || "";
+    if (
+      dateStr.includes("2024") ||
+      dateStr.includes("/24") ||
+      dateStr.includes("2025") ||
+      dateStr.includes("/25")
+    ) {
+      return false;
+    }
+    return true;
+  };
+
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -644,22 +658,31 @@ export function getInitialCachedData(): {
         };
       });
 
-      const prevList: MatchSummary[] =
+      const rawPrevList: MatchSummary[] =
         Array.isArray(parsed.previousMatches) && parsed.previousMatches.length > 0
-          ? parsed.previousMatches
-          : parsed.previousMatch
+          ? parsed.previousMatches.filter(isValid2026Match)
+          : parsed.previousMatch && isValid2026Match(parsed.previousMatch)
             ? [parsed.previousMatch]
-            : DEFAULT_PREVIOUS_MATCHES;
+            : [];
 
-      const followList: MatchSummary[] =
+      const prevList = rawPrevList.length > 0 ? rawPrevList : DEFAULT_PREVIOUS_MATCHES;
+
+      const rawFollowList: MatchSummary[] =
         Array.isArray(parsed.followingMatches) && parsed.followingMatches.length > 0
-          ? parsed.followingMatches
-          : parsed.followingMatch
+          ? parsed.followingMatches.filter(isValid2026Match)
+          : parsed.followingMatch && isValid2026Match(parsed.followingMatch)
             ? [parsed.followingMatch]
-            : DEFAULT_FOLLOWING_MATCHES;
+            : [];
+
+      const followList = rawFollowList.length > 0 ? rawFollowList : DEFAULT_FOLLOWING_MATCHES;
+
+      const validMatch: NextMatch =
+        parsed.match && isValid2026Match(parsed.match)
+          ? parsed.match
+          : DEFAULT_MOCK_MATCH;
 
       return {
-        match: parsed.match || DEFAULT_MOCK_MATCH,
+        match: validMatch,
         previousMatch: prevList[0] || DEFAULT_PREVIOUS_MATCH,
         followingMatch: followList[0] || DEFAULT_FOLLOWING_MATCH,
         previousMatches: prevList,
