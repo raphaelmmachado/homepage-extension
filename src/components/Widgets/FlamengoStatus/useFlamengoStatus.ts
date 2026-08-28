@@ -68,27 +68,21 @@ export function useFlamengoStatus() {
     Record<string, "compact" | "standings" | "groups" | "bracket" | "embed">
   >({});
 
-  const isYear2026OrFuture = (startTimestamp?: number) => {
-    if (!startTimestamp) return false;
-    const year = new Date(startTimestamp * 1000).getFullYear();
-    return year >= 2026;
+  const isValidMatchDate = (m: MatchSummary | NextMatch | null | undefined): boolean => {
+    if (!m) return false;
+    const dateStr = m.date || "";
+    if (
+      dateStr.includes("2024") ||
+      dateStr.includes("/24") ||
+      dateStr.includes("2025") ||
+      dateStr.includes("/25")
+    ) {
+      return false;
+    }
+    return true;
   };
 
   const fetchSofascoreData = async (forceRefresh = false) => {
-    const isValid2026Match = (m: MatchSummary | NextMatch | null | undefined): boolean => {
-      if (!m) return false;
-      const dateStr = m.date || "";
-      if (
-        dateStr.includes("2024") ||
-        dateStr.includes("/24") ||
-        dateStr.includes("2025") ||
-        dateStr.includes("/25")
-      ) {
-        return false;
-      }
-      return true;
-    };
-
     if (!forceRefresh) {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -97,21 +91,21 @@ export function useFlamengoStatus() {
           const now = Date.now();
           const ttl = parsed.ttl || CACHE_TTL;
           if (now - parsed.timestamp < ttl) {
-            if (parsed.match && isValid2026Match(parsed.match)) {
+            if (parsed.match && isValidMatchDate(parsed.match)) {
               setNextMatch(parsed.match);
             }
-            if (parsed.previousMatch && isValid2026Match(parsed.previousMatch)) {
+            if (parsed.previousMatch && isValidMatchDate(parsed.previousMatch)) {
               setPreviousMatch(parsed.previousMatch);
             }
-            if (parsed.followingMatch && isValid2026Match(parsed.followingMatch)) {
+            if (parsed.followingMatch && isValidMatchDate(parsed.followingMatch)) {
               setFollowingMatch(parsed.followingMatch);
             }
             if (Array.isArray(parsed.previousMatches) && parsed.previousMatches.length > 0) {
-              const validPrev = parsed.previousMatches.filter(isValid2026Match);
+              const validPrev = parsed.previousMatches.filter(isValidMatchDate);
               if (validPrev.length > 0) setPreviousMatches(validPrev);
             }
             if (Array.isArray(parsed.followingMatches) && parsed.followingMatches.length > 0) {
-              const validFollow = parsed.followingMatches.filter(isValid2026Match);
+              const validFollow = parsed.followingMatches.filter(isValidMatchDate);
               if (validFollow.length > 0) setFollowingMatches(validFollow);
             }
             setChampionships(parsed.championships);
@@ -215,7 +209,8 @@ export function useFlamengoStatus() {
         };
       };
 
-      const allTeamEvents: ExtractedMatch[] = [];
+      // Repositório consolidado de todos os eventos extraídos dinamicamente de todas as fontes
+      const allExtractedEvents: ExtractedMatch[] = [];
 
       // 1. Scraping dos Eventos do Time (Próximos e Anteriores)
       try {
@@ -231,13 +226,13 @@ export function useFlamengoStatus() {
         if (nextRes.ok) {
           const nextData = await nextRes.json();
           const nextEvents: ExtractedMatch[] = nextData.events || [];
-          allTeamEvents.push(...nextEvents.filter((e) => isYear2026OrFuture(e.startTimestamp)));
+          allExtractedEvents.push(...nextEvents);
         }
 
         if (lastRes.ok) {
           const lastData = await lastRes.json();
           const lastEvents: ExtractedMatch[] = lastData.events || [];
-          allTeamEvents.push(...lastEvents.filter((e) => isYear2026OrFuture(e.startTimestamp)));
+          allExtractedEvents.push(...lastEvents);
         }
       } catch (err) {
         console.error("Erro ao buscar eventos gerais do time:", err);
@@ -319,7 +314,8 @@ export function useFlamengoStatus() {
                       if (cupData.cupTrees && cupData.cupTrees.length > 0) {
                         const extracted = extractMatchesRecursively(cupData);
                         if (extracted.length > 0) {
-                          allExtractedCupMatches.push(...extracted.filter((e: ExtractedMatch) => isYear2026OrFuture(e.startTimestamp)));
+                          allExtractedCupMatches.push(...extracted);
+                          allExtractedEvents.push(...extracted);
                           break;
                         }
                       }
@@ -354,7 +350,8 @@ export function useFlamengoStatus() {
                             if (evRes.ok) {
                               const evData = await evRes.json();
                               const rEvents = evData.events || [];
-                              allExtractedCupMatches.push(...rEvents.filter((e: ExtractedMatch) => isYear2026OrFuture(e.startTimestamp)));
+                              allExtractedCupMatches.push(...rEvents);
+                              allExtractedEvents.push(...rEvents);
                             }
                           }
                         }
@@ -366,7 +363,7 @@ export function useFlamengoStatus() {
                 }
 
                 // A.3 Adiciona eventos diretos do time nesta competição
-                const directEvents = allTeamEvents.filter(
+                const directEvents = allExtractedEvents.filter(
                   (ev: ExtractedMatch) =>
                     (ev.tournament as { uniqueTournament?: { id?: number } })?.uniqueTournament?.id === tourn.id ||
                     (ev.tournament as { id?: number })?.id === tourn.id ||
@@ -537,6 +534,7 @@ export function useFlamengoStatus() {
                     const sEventsData = await SportsDataClient.fetchSeasonEvents(tourn.id, s.id);
                     if (sEventsData && Array.isArray(sEventsData.events)) {
                       leagueEvents = sEventsData.events;
+                      allExtractedEvents.push(...leagueEvents);
                     }
 
                     if (leagueEvents.length === 0) {
@@ -546,7 +544,7 @@ export function useFlamengoStatus() {
                         24;
 
                       const targetRounds: number[] = [];
-                      for (let r = Math.max(1, curRound - 6); r <= curRound + 1; r++) {
+                      for (let r = Math.max(1, curRound - 6); r <= curRound + 2; r++) {
                         targetRounds.push(r);
                       }
 
@@ -558,12 +556,9 @@ export function useFlamengoStatus() {
                       for (const rr of roundResults) {
                         if (rr && Array.isArray((rr as { events?: ExtractedMatch[] }).events)) {
                           leagueEvents.push(...(rr as { events: ExtractedMatch[] }).events);
+                          allExtractedEvents.push(...(rr as { events: ExtractedMatch[] }).events);
                         }
                       }
-                    }
-
-                    if (allTeamEvents.length > 0) {
-                      leagueEvents.push(...allTeamEvents);
                     }
 
                     const finishedLeagueMatches = leagueEvents.filter(
@@ -572,8 +567,7 @@ export function useFlamengoStatus() {
                           ev.tournament?.name?.toLowerCase().includes("brasileir") ||
                           ev.tournament?.name?.toLowerCase().includes("série a") ||
                           ev.tournament?.name?.toLowerCase().includes("serie a")) &&
-                        (ev.status?.type === "finished" || ev.status?.type === "ended") &&
-                        isYear2026OrFuture(ev.startTimestamp)
+                        (ev.status?.type === "finished" || ev.status?.type === "ended")
                     );
 
                     const uniqueFinished: ExtractedMatch[] = [];
@@ -614,42 +608,6 @@ export function useFlamengoStatus() {
                     console.error("Erro ao processar forma dos times da liga:", e);
                   }
 
-                  // Extrair forma do time favorito a partir dos eventos finalizados de 2026
-                  const flaEventsFinished = allTeamEvents.filter(
-                    (ev: ExtractedMatch) =>
-                      ((ev.tournament as { uniqueTournament?: { id?: number } })?.uniqueTournament?.id === tourn.id ||
-                        ev.tournament?.name
-                          ?.toLowerCase()
-                          .includes("brasileir")) &&
-                      (ev.status?.type === "finished" ||
-                        ev.status?.type === "ended") &&
-                      isYear2026OrFuture(ev.startTimestamp),
-                  );
-                  flaEventsFinished.sort(
-                    (a, b) =>
-                      (a.startTimestamp || 0) - (b.startTimestamp || 0),
-                  );
-                  const flaFallbackForm = flaEventsFinished
-                    .slice(-5)
-                    .map((m) => {
-                      const isHome = m.homeTeam?.id === SOFASCORE_TEAM_ID;
-                      const fScore = isHome
-                        ? (m.homeScore?.display ??
-                          m.homeScore?.current ??
-                          0)
-                        : (m.awayScore?.display ??
-                          m.awayScore?.current ??
-                          0);
-                      const oScore = isHome
-                        ? (m.awayScore?.display ??
-                          m.awayScore?.current ??
-                          0)
-                        : (m.homeScore?.display ??
-                          m.homeScore?.current ??
-                          0);
-                      return fScore > oScore ? "V" : fScore < oScore ? "D" : "E";
-                    });
-
                   for (const table of allStandings) {
                     const rows: StandingsRow[] = table.rows || [];
                     const flaIndex = rows.findIndex(
@@ -675,14 +633,6 @@ export function useFlamengoStatus() {
                           leagueTeamFormMap.has(r.team.id)
                         ) {
                           formList = leagueTeamFormMap.get(r.team.id)!;
-                        }
-
-                        if (
-                          formList.length === 0 &&
-                          r.team?.id === SOFASCORE_TEAM_ID &&
-                          flaFallbackForm.length > 0
-                        ) {
-                          formList = flaFallbackForm;
                         }
 
                         return {
@@ -848,35 +798,47 @@ export function useFlamengoStatus() {
         fetchedChamps.length > 0 ? fetchedChamps : DEFAULT_CHAMPIONSHIPS;
       setChampionships(finalChamps);
 
-      // 3. Processa todos os jogos 2026 de forma precisa
-      const fla2026Events = allTeamEvents.filter(
-        (ev) =>
-          (ev.homeTeam?.id === SOFASCORE_TEAM_ID ||
-            ev.awayTeam?.id === SOFASCORE_TEAM_ID ||
-            normalizeString(ev.homeTeam?.name || "").includes(normalizeString(ACTIVE_CLUB.name)) ||
-            normalizeString(ev.awayTeam?.name || "").includes(normalizeString(ACTIVE_CLUB.name))) &&
-          isYear2026OrFuture(ev.startTimestamp)
-      );
+      // 3. Processa TODOS os jogos dinâmicos do clube favorito (Brasileirão, Copa do Brasil, Libertadores)
+      const clubMatchesMap = new Map<string, ExtractedMatch>();
+      for (const ev of allExtractedEvents) {
+        const isClub =
+          ev.homeTeam?.id === SOFASCORE_TEAM_ID ||
+          ev.awayTeam?.id === SOFASCORE_TEAM_ID ||
+          normalizeString(ev.homeTeam?.name || "").includes(normalizeString(ACTIVE_CLUB.name)) ||
+          normalizeString(ev.awayTeam?.name || "").includes(normalizeString(ACTIVE_CLUB.name));
 
-      const finished2026 = fla2026Events.filter(
+        if (isClub && ev.startTimestamp) {
+          const matchYear = new Date(ev.startTimestamp * 1000).getFullYear();
+          if (matchYear >= 2026) {
+            const key = `${ev.id || ""}-${ev.startTimestamp}-${ev.homeTeam?.id}-${ev.awayTeam?.id}`;
+            if (!clubMatchesMap.has(key)) {
+              clubMatchesMap.set(key, ev);
+            }
+          }
+        }
+      }
+
+      const clubMatches = Array.from(clubMatchesMap.values());
+
+      const finishedMatches = clubMatches.filter(
         (e) => e.status?.type === "finished" || e.status?.type === "ended"
       );
-      finished2026.sort((a, b) => (b.startTimestamp || 0) - (a.startTimestamp || 0));
+      finishedMatches.sort((a, b) => (b.startTimestamp || 0) - (a.startTimestamp || 0));
 
-      const live2026 = fla2026Events.filter((e) => e.status?.type === "inprogress");
+      const liveMatches = clubMatches.filter((e) => e.status?.type === "inprogress");
 
-      const upcoming2026 = fla2026Events.filter(
-        (e) => e.status?.type === "notstarted"
+      const upcomingMatches = clubMatches.filter(
+        (e) => e.status?.type === "notstarted" || e.status?.type === "scheduled"
       );
-      upcoming2026.sort((a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0));
+      upcomingMatches.sort((a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0));
 
-      if (finished2026.length > 0) {
-        prevMatchesList = finished2026.slice(0, 4).map((e) => parseToMatchSummary(e, true));
+      if (finishedMatches.length > 0) {
+        prevMatchesList = finishedMatches.slice(0, 4).map((e) => parseToMatchSummary(e, true));
         previousMatchData = prevMatchesList[0] || DEFAULT_PREVIOUS_MATCH;
       }
 
-      if (live2026.length > 0 || upcoming2026.length > 0) {
-        const nextEv = live2026[0] || upcoming2026[0]!;
+      if (liveMatches.length > 0 || upcomingMatches.length > 0) {
+        const nextEv = liveMatches[0] || upcomingMatches[0]!;
         const isHome = nextEv.homeTeam?.id === SOFASCORE_TEAM_ID;
         const opponentTeam = isHome ? nextEv.awayTeam : nextEv.homeTeam;
         const competitionName =
@@ -942,7 +904,7 @@ export function useFlamengoStatus() {
             undefined,
         };
 
-        const followEvents = live2026.length > 0 ? upcoming2026.slice(0, 4) : upcoming2026.slice(1, 5);
+        const followEvents = liveMatches.length > 0 ? upcomingMatches.slice(0, 4) : upcomingMatches.slice(1, 5);
         if (followEvents.length > 0) {
           followMatchesList = followEvents.map((e) => parseToMatchSummary(e, false));
           followingMatchData = followMatchesList[0] || DEFAULT_FOLLOWING_MATCH;
