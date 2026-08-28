@@ -30,13 +30,15 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
   showPositions,
   logoUrl,
 }) => {
+  // 1. Jogos Anteriores: quando expandido, ordena do mais antigo (topo) para o mais recente (embaixo, adjacente à partida atual)
   const prevList =
     isExpanded && previousMatches.length > 0
-      ? previousMatches.slice(0, 3)
+      ? [...previousMatches.slice(0, 3)].reverse()
       : previousMatch
         ? [previousMatch]
         : [];
 
+  // 2. Próximos Jogos: ordenados do mais próximo/recente (topo, adjacente à partida atual) para o mais distante (embaixo)
   const followList =
     isExpanded && followingMatches.length > 0
       ? followingMatches.slice(0, 3)
@@ -47,7 +49,9 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
   return (
     <div
       className={`flex flex-col h-full ${
-        isExpanded ? "justify-between gap-3 min-h-[720px]" : "justify-between gap-3"
+        isExpanded
+          ? "justify-between gap-3 min-h-[720px]"
+          : "justify-between gap-3"
       }`}
     >
       {/* 1. SEÇÃO DE JOGOS ANTERIORES */}
@@ -57,9 +61,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-500 dark:text-gray-400">
               Jogos Anteriores
             </span>
-            <span className="text-[10px] text-gray-400 font-medium">
-              Ordem decrescente
-            </span>
+            <span className="text-[10px] text-gray-400 font-medium"></span>
           </div>
         )}
 
@@ -75,7 +77,9 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 </span>
                 {m.roundOrPhase && (
                   <>
-                    <span className="text-gray-400 font-normal text-[10px]">•</span>
+                    <span className="text-gray-400 font-normal text-[10px]">
+                      •
+                    </span>
                     <span className="text-gray-500 dark:text-gray-400 text-[10px] truncate">
                       {m.roundOrPhase}
                     </span>
@@ -381,9 +385,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400">
               Próximos Jogos
             </span>
-            <span className="text-[10px] text-gray-400 font-medium">
-              Ordem crescente
-            </span>
+            <span className="text-[10px] text-gray-400 font-medium"></span>
           </div>
         )}
 
@@ -399,7 +401,9 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 </span>
                 {m.roundOrPhase && (
                   <>
-                    <span className="text-gray-400 font-normal text-[10px]">•</span>
+                    <span className="text-gray-400 font-normal text-[10px]">
+                      •
+                    </span>
                     <span className="text-gray-500 dark:text-gray-400 text-[10px] truncate">
                       {m.roundOrPhase}
                     </span>
