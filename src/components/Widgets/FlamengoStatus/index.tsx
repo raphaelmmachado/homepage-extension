@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useFlamengoStatus } from "./useFlamengoStatus";
 import { resolveStadiumDisplay } from "./utils";
 import { FLAMENGO_LOGO_URL } from "./constants";
@@ -5,6 +6,7 @@ import { SofascoreEmbedView } from "./SofascoreEmbedView";
 import { MatchesScheduleStack } from "./MatchesScheduleStack";
 
 export function FlamengoStatus() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const {
     activeTab,
     setActiveTab,
@@ -31,8 +33,43 @@ export function FlamengoStatus() {
     champViewMode[activeChamp.id] === "groups" ||
     champViewMode[activeChamp.id] === "bracket";
 
+  const scrollToWidget = () => {
+    setTimeout(() => {
+      containerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
+
+  const toggleViewMode = (mode: "standings" | "bracket" | "groups") => {
+    setChampViewMode((prev) => {
+      const currentMode = prev[activeChamp.id] || "compact";
+      const nextMode = currentMode === mode ? "compact" : mode;
+      if (nextMode === "compact") {
+        scrollToWidget();
+      }
+      return {
+        ...prev,
+        [activeChamp.id]: nextMode,
+      };
+    });
+  };
+
+  const handleCloseEmbed = () => {
+    setChampViewMode((prev) => ({
+      ...prev,
+      [activeChamp.id]: "compact",
+    }));
+    scrollToWidget();
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative">
+    <div
+      ref={containerRef}
+      id="sports-status-widget"
+      className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative scroll-mt-6"
+    >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <img
@@ -357,15 +394,7 @@ export function FlamengoStatus() {
               <div className="flex items-center gap-2 flex-wrap">
                 {activeChamp.isLeague && activeChamp.fullStandings && (
                   <button
-                    onClick={() =>
-                      setChampViewMode((prev) => ({
-                        ...prev,
-                        [activeChamp.id]:
-                          (prev[activeChamp.id] || "compact") === "standings"
-                            ? "compact"
-                            : "standings",
-                      }))
-                    }
+                    onClick={() => toggleViewMode("standings")}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/70 hover:border-gray-300 dark:hover:border-gray-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   >
                     <span>
@@ -398,15 +427,7 @@ export function FlamengoStatus() {
                 {activeChamp.id === "tourn_384" && (
                   <>
                     <button
-                      onClick={() =>
-                        setChampViewMode((prev) => ({
-                          ...prev,
-                          [activeChamp.id]:
-                            (prev[activeChamp.id] || "compact") === "bracket"
-                              ? "compact"
-                              : "bracket",
-                        }))
-                      }
+                      onClick={() => toggleViewMode("bracket")}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/70 hover:border-gray-300 dark:hover:border-gray-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <span>
@@ -436,15 +457,7 @@ export function FlamengoStatus() {
                     </button>
 
                     <button
-                      onClick={() =>
-                        setChampViewMode((prev) => ({
-                          ...prev,
-                          [activeChamp.id]:
-                            (prev[activeChamp.id] || "compact") === "groups"
-                              ? "compact"
-                              : "groups",
-                        }))
-                      }
+                      onClick={() => toggleViewMode("groups")}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/70 hover:border-gray-300 dark:hover:border-gray-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <span>
@@ -477,15 +490,7 @@ export function FlamengoStatus() {
 
                 {activeChamp.id === "tourn_373" && (
                   <button
-                    onClick={() =>
-                      setChampViewMode((prev) => ({
-                        ...prev,
-                        [activeChamp.id]:
-                          (prev[activeChamp.id] || "compact") === "bracket"
-                            ? "compact"
-                            : "bracket",
-                      }))
-                    }
+                    onClick={() => toggleViewMode("bracket")}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/70 hover:border-gray-300 dark:hover:border-gray-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   >
                     <span>
@@ -528,45 +533,25 @@ export function FlamengoStatus() {
             champViewMode[activeChamp.id] === "standings" ? (
               <SofascoreEmbedView
                 type="brasileirao_standings"
-                onClose={() =>
-                  setChampViewMode((prev) => ({
-                    ...prev,
-                    [activeChamp.id]: "compact",
-                  }))
-                }
+                onClose={handleCloseEmbed}
               />
             ) : activeChamp.id === "tourn_384" &&
               champViewMode[activeChamp.id] === "bracket" ? (
               <SofascoreEmbedView
                 type="libertadores_bracket"
-                onClose={() =>
-                  setChampViewMode((prev) => ({
-                    ...prev,
-                    [activeChamp.id]: "compact",
-                  }))
-                }
+                onClose={handleCloseEmbed}
               />
             ) : activeChamp.id === "tourn_384" &&
               champViewMode[activeChamp.id] === "groups" ? (
               <SofascoreEmbedView
                 type="libertadores_groups"
-                onClose={() =>
-                  setChampViewMode((prev) => ({
-                    ...prev,
-                    [activeChamp.id]: "compact",
-                  }))
-                }
+                onClose={handleCloseEmbed}
               />
             ) : activeChamp.id === "tourn_373" &&
               champViewMode[activeChamp.id] === "bracket" ? (
               <SofascoreEmbedView
                 type="cdb_bracket"
-                onClose={() =>
-                  setChampViewMode((prev) => ({
-                    ...prev,
-                    [activeChamp.id]: "compact",
-                  }))
-                }
+                onClose={handleCloseEmbed}
               />
             ) : null}
           </div>
