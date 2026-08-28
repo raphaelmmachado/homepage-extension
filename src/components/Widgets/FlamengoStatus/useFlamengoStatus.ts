@@ -15,6 +15,7 @@ import {
   CACHE_TTL,
   TOURNAMENTS_CONFIG,
   DEFAULT_CHAMPIONSHIPS,
+  MOCK_BRASILEIRAO_STANDINGS,
 } from "./constants";
 import {
   extractMatchesRecursively,
@@ -33,18 +34,22 @@ import { ACTIVE_CLUB } from "./clubConfig";
 
 export function useFlamengoStatus() {
   const [initialData] = useState(getInitialCachedData);
-  const [activeTab, setActiveTab] = useState<string>("tourn_325");
-  const [champViewMode, setChampViewMode] = useState<
-    Record<string, "compact" | "bracket" | "standings" | "groups">
-  >({});
+  const [nextMatch, setNextMatch] = useState<NextMatch>(
+    initialData.match || DEFAULT_MOCK_MATCH,
+  );
+  const [championships, setChampionships] = useState<Championship[]>(
+    initialData.championships || DEFAULT_CHAMPIONSHIPS,
+  );
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(
     initialData.timestamp,
   );
-  const [nextMatch, setNextMatch] = useState<NextMatch>(initialData.match);
-  const [championships, setChampionships] = useState<Championship[]>(
-    initialData.championships,
-  );
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return initialData.championships?.[0]?.id || "tourn_325";
+  });
+  const [champViewMode, setChampViewMode] = useState<
+    Record<string, "compact" | "standings" | "groups" | "bracket" | "embed">
+  >({});
 
   const fetchSofascoreData = async (forceRefresh = false) => {
     if (!forceRefresh) {
@@ -52,225 +57,206 @@ export function useFlamengoStatus() {
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          if (parsed.match) setNextMatch(parsed.match);
-          if (parsed.championships && parsed.championships.length > 0) {
-            setChampionships(parsed.championships);
-          }
-          if (parsed.timestamp) setLastUpdated(parsed.timestamp);
+          const now = Date.now();
           const ttl = parsed.ttl || CACHE_TTL;
-          if (Date.now() - parsed.timestamp < ttl) {
+          if (now - parsed.timestamp < ttl) {
+            setNextMatch(parsed.match);
+            setChampionships(parsed.championships);
+            setLastUpdated(parsed.timestamp);
             return;
           }
-        } catch (e) {
-          console.error("Erro ao ler cache do Sofascore:", e);
+        } catch {
+          // Ignore cache parse error and fetch fresh data
         }
       }
     }
 
     setLoading(true);
-
     try {
-      let fetchedMatch = { ...DEFAULT_MOCK_MATCH };
+      let fetchedMatch: NextMatch = {
+        opponent: "Adversário",
+        date: "Buscando...",
+        time: "--:--",
+        competition: "Buscando...",
+        isHome: true,
+        stadium: "Buscando...",
+      };
 
-      // 1. Puxar eventos recentes e futuros do time (para garantir chaveamento e dados ao vivo)
-      let allTeamEvents: ExtractedMatch[] = [];
+      const allTeamEvents: ExtractedMatch[] = [];
+
+      // 1. Scraping dos Eventos do Time (Próximos e Anteriores)
       try {
-        const { lastData, nextData } = await SportsDataClient.fetchTeamData(SOFASCORE_TEAM_ID);
+        const [nextRes, lastRes] = await Promise.all([
+          fetch(
+            `https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/next/0`,
+          ),
+          fetch(
+            `https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/last/0`,
+          ),
+        ]);
 
-        allTeamEvents = [
-          ...(lastData.events || []),
-          ...(nextData.events || []),
-        ];
+        let upcomingEvents: ExtractedMatch[] = [];
+        let previousEvents: ExtractedMatch[] = [];
 
-        // 1.1 Identifica se há jogo AO VIVO (inprogress) ou próximo jogo (notstarted)
-        const liveEvent = allTeamEvents.find(
-          (e) => e.status?.type === "inprogress",
+        if (nextRes.ok) {
+          const nextData = await nextRes.json();
+          upcomingEvents = nextData.events || [];
+          allTeamEvents.push(...upcomingEvents);
+        }
+
+        if (lastRes.ok) {
+          const lastData = await lastRes.json();
+          previousEvents = lastData.events || [];
+          allTeamEvents.push(...previousEvents);
+        }
+
+        // Verifica se há jogo AO VIVO agora ou nos próximos
+        const liveEvent = upcomingEvents.find(
+          (e: ExtractedMatch) => e.status?.type === "inprogress",
         );
-        const upcomingEvent =
-          (nextData.events || []).find(
-            (e: ExtractedMatch) => e.status?.type === "notstarted",
-          ) || nextData.events?.[0];
-
-        const activeEvent =
+        const nextEvent =
           liveEvent ||
-          upcomingEvent ||
-          (lastData.events && lastData.events.length > 0
-            ? lastData.events[lastData.events.length - 1]
-            : undefined);
+          upcomingEvents.find(
+            (e: ExtractedMatch) => e.status?.type === "notstarted",
+          ) ||
+          upcomingEvents[0];
 
-        if (activeEvent) {
-          const isHome = activeEvent.homeTeam?.id === SOFASCORE_TEAM_ID;
-          const oppTeam = isHome ? activeEvent.awayTeam : activeEvent.homeTeam;
-          const isLive = activeEvent.status?.type === "inprogress";
+        if (nextEvent) {
+          const isHome = nextEvent.homeTeam?.id === SOFASCORE_TEAM_ID;
+          const opponentTeam = isHome
+            ? nextEvent.awayTeam
+            : nextEvent.homeTeam;
+          const competitionName =
+            (nextEvent.tournament as { uniqueTournament?: { name?: string; id?: number }; name?: string })?.uniqueTournament?.name ||
+            (nextEvent.tournament as { name?: string })?.name ||
+            "Competição";
+          const compId =
+            (nextEvent.tournament as { uniqueTournament?: { name?: string; id?: number } })?.uniqueTournament?.id ||
+            (nextEvent.tournament as { id?: number })?.id;
+          const isLive = nextEvent.status?.type === "inprogress";
 
           const { dateStr, weekdayStr, timeStr } = formatMatchDateTime(
-            activeEvent.startTimestamp,
+            nextEvent.startTimestamp || 0,
           );
 
-          const homeScore =
-            activeEvent.homeScore?.display ?? activeEvent.homeScore?.current;
-          const awayScore =
-            activeEvent.awayScore?.display ?? activeEvent.awayScore?.current;
+          const stadiumName =
+            (nextEvent as { venue?: { stadium?: { name?: string }; name?: string } }).venue?.stadium?.name ||
+            (nextEvent as { venue?: { stadium?: { name?: string }; name?: string } }).venue?.name ||
+            getKnownStadium(nextEvent.homeTeam?.name || "");
 
-          let statusDescription = activeEvent.status?.description || "";
-          const descLower = statusDescription.toLowerCase();
-          if (descLower.includes("1st half") || descLower.includes("1st"))
-            statusDescription = "1º Tempo";
-          else if (descLower.includes("2nd half") || descLower.includes("2nd"))
-            statusDescription = "2º Tempo";
-          else if (descLower.includes("halftime") || descLower.includes("ht"))
-            statusDescription = "Intervalo";
-          else if (descLower.includes("extra"))
-            statusDescription = "Prorrogação";
-          else if (descLower.includes("penalt")) statusDescription = "Pênaltis";
-
-          // Buscar detalhes do evento para pegar TV e Estádio (Venue)
-          let tvChannels: string[] = [];
-          let fetchedStadium = "";
-          let fetchedCity = "";
-          if (activeEvent.id) {
-            try {
-              const eventData = await SportsDataClient.fetchEventDetails(activeEvent.id);
-              if (eventData) {
-                const networks =
-                  eventData.event?.tvNetworks ||
-                  eventData.event?.media ||
-                  eventData.event?.channels;
-                if (Array.isArray(networks)) {
-                  tvChannels = networks
-                    .map(
-                      (
-                        tv:
-                          | { tvNetwork?: { name?: string }; name?: string }
-                          | string,
-                      ) => {
-                        if (typeof tv === "string") return tv;
-                        return tv?.tvNetwork?.name || tv?.name || "";
-                      },
-                    )
-                    .filter(Boolean);
-                }
-
-                const venue = eventData.event?.venue;
-                if (venue) {
-                  fetchedStadium = venue.stadium?.name || venue.name || "";
-                  fetchedCity = venue.city?.name || "";
-                }
-              }
-            } catch (e) {
-              console.error("Erro ao buscar detalhes do evento:", e);
-            }
-          }
-
-          const opponentName =
-            oppTeam?.shortName || oppTeam?.name || "Adversário";
-          const competitionName =
-            activeEvent.tournament?.name || "Competição Oficial";
-          const tournamentId =
-            activeEvent.tournament?.uniqueTournament?.id ||
-            activeEvent.tournament?.id;
-          const roundName = activeEvent.roundInfo?.name;
-          const roundNumber = activeEvent.roundInfo?.round;
-
+          const roundNumber = nextEvent.roundInfo?.round;
+          const roundName = nextEvent.roundInfo?.name;
           const { phaseType, roundOrPhase } = detectPhaseType(
             competitionName,
             roundName,
             roundNumber,
-            tournamentId,
+            compId,
           );
-
-          const finalTv = getBroadcastChannels(
-            competitionName,
-            isHome,
-            opponentName,
-            tvChannels,
-          );
-
-          const stadiumName =
-            fetchedStadium ||
-            (isHome ? "Maracanã" : getKnownStadium(opponentName)) ||
-            "";
 
           fetchedMatch = {
-            opponent: opponentName,
-            opponentId: oppTeam?.id,
-            opponentLogo: `https://api.sofascore.app/api/v1/team/${oppTeam?.id}/image`,
-            flamengoLogo: FLAMENGO_LOGO_URL,
+            opponent:
+              opponentTeam?.shortName ||
+              opponentTeam?.name ||
+              "Adversário",
+            opponentId: opponentTeam?.id,
+            opponentLogo: opponentTeam?.id
+              ? `https://api.sofascore.app/api/v1/team/${opponentTeam.id}/image`
+              : undefined,
+            isHome,
             date: dateStr,
             weekday: weekdayStr,
-            time: timeStr,
+            time: isLive ? "AO VIVO" : timeStr,
             competition: competitionName,
-            competitionId: tournamentId,
+            competitionId: compId,
+            stadium: stadiumName,
+            tvChannels: getBroadcastChannels(
+              competitionName,
+              isHome,
+              opponentTeam?.name || "",
+            ),
+            isLive,
             roundOrPhase,
             phaseType,
-            isHome,
-            stadium: stadiumName || (isHome ? "Maracanã" : "Estádio a definir"),
-            city: fetchedCity || undefined,
-            tvChannels: finalTv.length > 0 ? finalTv : undefined,
-            isLive,
-            homeScore,
-            awayScore,
-            statusType: activeEvent.status?.type,
-            statusDescription:
-              statusDescription || (isLive ? "Em andamento" : undefined),
+            statusDescription: nextEvent.status?.description,
+            statusType: nextEvent.status?.type,
+            homeScore:
+              nextEvent.homeScore?.display ??
+              nextEvent.homeScore?.current ??
+              undefined,
+            awayScore:
+              nextEvent.awayScore?.display ??
+              nextEvent.awayScore?.current ??
+              undefined,
           };
+        } else if (previousEvents.length > 0) {
+          const lastEvent = previousEvents[0];
+          if (lastEvent) {
+            const isHome = lastEvent.homeTeam?.id === SOFASCORE_TEAM_ID;
+            const opponentTeam = isHome
+              ? lastEvent.awayTeam
+              : lastEvent.homeTeam;
+            const competitionName =
+              (lastEvent.tournament as { uniqueTournament?: { name?: string; id?: number }; name?: string })?.uniqueTournament?.name ||
+              (lastEvent.tournament as { name?: string })?.name ||
+              "Competição";
+            const compId =
+              (lastEvent.tournament as { uniqueTournament?: { name?: string; id?: number } })?.uniqueTournament?.id ||
+              (lastEvent.tournament as { id?: number })?.id;
 
-          // Se for Liga ou Fase de Grupos, busca a tabela para garantir as posições de ambos os times
-          if (phaseType === "league" || phaseType === "group") {
-            const compId = tournamentId;
-            if (compId) {
-              try {
-                const tournSeasonsRes = await fetch(
-                  `https://api.sofascore.com/api/v1/unique-tournament/${compId}/seasons`,
-                );
-                if (tournSeasonsRes.ok) {
-                  const seasonsData = await tournSeasonsRes.json();
-                  const curSeason = seasonsData.seasons?.[0];
-                  if (curSeason?.id) {
-                    const sRes = await fetch(
-                      `https://api.sofascore.com/api/v1/unique-tournament/${compId}/season/${curSeason.id}/standings/total`,
-                    );
-                    if (sRes.ok) {
-                      const sData = await sRes.json();
-                      const tables = sData.standings || [];
-                      for (const tbl of tables) {
-                        const allRows: StandingsRow[] = tbl.rows || [];
-                        const fRow = allRows.find(
-                          (r) => r.team?.id === SOFASCORE_TEAM_ID,
-                        );
-                        const oRow = allRows.find((r) => {
-                          if (oppTeam?.id && r.team?.id === oppTeam.id)
-                            return true;
-                          const rName = normalizeString(
-                            r.team?.shortName || r.team?.name || "",
-                          );
-                          const oName = normalizeString(opponentName);
-                          return (
-                            oName &&
-                            rName &&
-                            (rName.includes(oName) || oName.includes(rName))
-                          );
-                        });
+            const { dateStr, weekdayStr, timeStr } = formatMatchDateTime(
+              lastEvent.startTimestamp || 0,
+            );
 
-                        if (fRow)
-                          fetchedMatch.flamengoPosition = fRow.position;
-                        if (oRow)
-                          fetchedMatch.opponentPosition = oRow.position;
-                        if (fRow && oRow) break;
-                      }
-                    }
-                  }
-                }
-              } catch (e) {
-                console.error(
-                  "Erro ao buscar tabela para posições do próximo jogo:",
-                  e,
-                );
-              }
-            }
+            const stadiumName =
+              (lastEvent as { venue?: { stadium?: { name?: string }; name?: string } }).venue?.stadium?.name ||
+              (lastEvent as { venue?: { stadium?: { name?: string }; name?: string } }).venue?.name ||
+              getKnownStadium(lastEvent.homeTeam?.name || "");
+
+            const roundNumber = lastEvent.roundInfo?.round;
+            const roundName = lastEvent.roundInfo?.name;
+            const { phaseType, roundOrPhase } = detectPhaseType(
+              competitionName,
+              roundName,
+              roundNumber,
+              compId,
+            );
+
+            fetchedMatch = {
+              opponent:
+                opponentTeam?.shortName ||
+                opponentTeam?.name ||
+                "Adversário",
+              opponentId: opponentTeam?.id,
+              opponentLogo: opponentTeam?.id
+                ? `https://api.sofascore.app/api/v1/team/${opponentTeam.id}/image`
+                : undefined,
+              isHome,
+              date: dateStr,
+              weekday: weekdayStr,
+              time: timeStr,
+              competition: competitionName,
+              competitionId: compId,
+              stadium: stadiumName,
+              tvChannels: getBroadcastChannels(
+                competitionName,
+                isHome,
+                opponentTeam?.name || "",
+              ),
+              isLive: false,
+              roundOrPhase,
+              phaseType,
+              statusDescription: lastEvent.status?.description,
+              statusType: lastEvent.status?.type,
+              homeScore:
+                lastEvent.homeScore?.display ??
+                lastEvent.homeScore?.current ??
+                undefined,
+              awayScore:
+                lastEvent.awayScore?.display ??
+                lastEvent.awayScore?.current ??
+                undefined,
+            };
           }
-
-          setNextMatch(fetchedMatch);
         }
       } catch (err) {
         console.error("Erro ao buscar eventos gerais do time:", err);
@@ -280,6 +266,9 @@ export function useFlamengoStatus() {
       const fetchedChamps: Championship[] = await Promise.all(
         TOURNAMENTS_CONFIG.map(async (tourn): Promise<Championship> => {
           const tournamentUrl = `https://www.sofascore.com/pt/football/tournament/${tourn.region}/${tourn.slug}/${tourn.id}`;
+          const defaultChamp = DEFAULT_CHAMPIONSHIPS.find(
+            (dc) => dc.id === `tourn_${tourn.id}`,
+          );
 
           try {
             const seasonsRes = await fetch(
@@ -287,7 +276,7 @@ export function useFlamengoStatus() {
             );
 
             if (!seasonsRes.ok) {
-              return {
+              return defaultChamp || {
                 id: `tourn_${tourn.id}`,
                 url: tournamentUrl,
                 name: tourn.name,
@@ -298,16 +287,28 @@ export function useFlamengoStatus() {
             }
 
             const seasonsData = await seasonsRes.json();
-            const seasons = (seasonsData.seasons || []).sort((a: { year?: string; name?: string; id?: number }, b: { year?: string; name?: string; id?: number }) => {
-              const is2026A = a.year === "2026" || (a.name && a.name.includes("2026")) || a.id === 87678 || a.id === 87760 || a.id === 89353;
-              const is2026B = b.year === "2026" || (b.name && b.name.includes("2026")) || b.id === 87678 || b.id === 87760 || b.id === 89353;
-              if (is2026A && !is2026B) return -1;
-              if (!is2026A && is2026B) return 1;
-              return 0;
-            });
+            const seasons = (seasonsData.seasons || []).sort(
+              (a: { year?: string; name?: string; id?: number }, b: { year?: string; name?: string; id?: number }) => {
+                const is2026A =
+                  a.year === "2026" ||
+                  (a.name && a.name.includes("2026")) ||
+                  a.id === 87678 ||
+                  a.id === 87760 ||
+                  a.id === 89353;
+                const is2026B =
+                  b.year === "2026" ||
+                  (b.name && b.name.includes("2026")) ||
+                  b.id === 87678 ||
+                  b.id === 87760 ||
+                  b.id === 89353;
+                if (is2026A && !is2026B) return -1;
+                if (!is2026A && is2026B) return 1;
+                return 0;
+              },
+            );
 
             if (seasons.length === 0) {
-              return {
+              return defaultChamp || {
                 id: `tourn_${tourn.id}`,
                 url: tournamentUrl,
                 name: tourn.name,
@@ -319,8 +320,7 @@ export function useFlamengoStatus() {
 
             let builtChamp: Championship | null = null;
             let knockoutObj: Championship["knockout"] | undefined = undefined;
-            let evalResult: ReturnType<typeof evaluateKnockoutStatus> | null =
-              null;
+            let evalResult: ReturnType<typeof evaluateKnockoutStatus> | null = null;
             let phaseTitle = "";
             const allExtractedCupMatches: ExtractedMatch[] = [];
 
@@ -387,15 +387,33 @@ export function useFlamengoStatus() {
                 // A.3 Adiciona eventos diretos do time nesta competição
                 const directEvents = allTeamEvents.filter(
                   (ev: ExtractedMatch) =>
-                    ev.tournament?.uniqueTournament?.id === tourn.id,
+                    (ev.tournament as { uniqueTournament?: { id?: number } })?.uniqueTournament?.id === tourn.id ||
+                    (ev.tournament as { id?: number })?.id === tourn.id ||
+                    (ev.tournament?.name &&
+                      normalizeString(ev.tournament.name).includes(
+                        normalizeString(tourn.name),
+                      )) ||
+                    (tourn.name &&
+                      ev.tournament?.name &&
+                      normalizeString(tourn.name).includes(
+                        normalizeString(ev.tournament.name),
+                      )),
                 );
                 allExtractedCupMatches.push(...directEvents);
 
-                // Isola jogos do Flamengo para extrair confronto atual (1º e 2º jogo)
+                // Isola jogos do time favorito para extrair confronto atual (1º e 2º jogo)
                 const flaCupMatches = allExtractedCupMatches.filter(
                   (m) =>
                     m.homeTeam?.id === SOFASCORE_TEAM_ID ||
-                    m.awayTeam?.id === SOFASCORE_TEAM_ID,
+                    m.awayTeam?.id === SOFASCORE_TEAM_ID ||
+                    (m.homeTeam?.name &&
+                      normalizeString(m.homeTeam.name).includes(
+                        normalizeString(ACTIVE_CLUB.name),
+                      )) ||
+                    (m.awayTeam?.name &&
+                      normalizeString(m.awayTeam.name).includes(
+                        normalizeString(ACTIVE_CLUB.name),
+                      )),
                 );
 
                 if (flaCupMatches.length > 0) {
@@ -476,7 +494,7 @@ export function useFlamengoStatus() {
                         scoreDisplay = "A disputar";
                       }
 
-                      const dateObj = new Date(m.startTimestamp * 1000);
+                      const dateObj = new Date((m.startTimestamp || 0) * 1000);
                       const dateStr = !isNaN(dateObj.getTime())
                         ? dateObj.toLocaleDateString("pt-BR", {
                             day: "2-digit",
@@ -485,34 +503,34 @@ export function useFlamengoStatus() {
                         : "--/--";
 
                       return {
+                        id: (m.id as number) || 0,
                         homeTeam:
                           m.homeTeam?.shortName ||
                           m.homeTeam?.name ||
-                          "Time Casa",
+                          "Time Mandante",
                         homeTeamId: m.homeTeam?.id,
                         awayTeam:
                           m.awayTeam?.shortName ||
                           m.awayTeam?.name ||
-                          "Time Fora",
+                          "Time Visitante",
                         awayTeamId: m.awayTeam?.id,
-                        homeScore,
-                        awayScore,
                         scoreDisplay,
                         date: dateStr,
-                        status: m.status?.type || "unknown",
+                        isFinished,
+                        isHome: m.homeTeam?.id === SOFASCORE_TEAM_ID,
                       };
                     }),
                   };
                 }
-              } catch (e) {
+              } catch (err) {
                 console.error(
-                  `Erro ao processar chaveamento de ${tourn.name}:`,
-                  e,
+                  `Erro ao processar mata-mata do torneio ${tourn.name}:`,
+                  err,
                 );
               }
             }
 
-            // B. Busca tabelas / standings (Tabela de Liga ou Grupos de Copas como Libertadores)
+            // B. Busca a classificação completa da tabela (Liga ou Grupos)
             let fullStandingsList: StandingsTeamRow[] = [];
             let miniStandingsList: StandingsTeamRow[] = [];
             const groupTablesList: GroupTable[] = [];
@@ -569,7 +587,7 @@ export function useFlamengoStatus() {
 
                     const finishedLeagueMatches = leagueEvents.filter(
                       (ev: ExtractedMatch) =>
-                        (ev.tournament?.uniqueTournament?.id === tourn.id ||
+                        ((ev.tournament as { uniqueTournament?: { id?: number } })?.uniqueTournament?.id === tourn.id ||
                           ev.tournament?.name?.toLowerCase().includes("brasileir") ||
                           ev.tournament?.name?.toLowerCase().includes("série a") ||
                           ev.tournament?.name?.toLowerCase().includes("serie a")) &&
@@ -617,7 +635,7 @@ export function useFlamengoStatus() {
                   // Extrair forma do time favorito a partir dos eventos finalizados como fallback
                   const flaEventsFinished = allTeamEvents.filter(
                     (ev: ExtractedMatch) =>
-                      (ev.tournament?.uniqueTournament?.id === tourn.id ||
+                      ((ev.tournament as { uniqueTournament?: { id?: number } })?.uniqueTournament?.id === tourn.id ||
                         ev.tournament?.name
                           ?.toLowerCase()
                           .includes("brasileir")) &&
@@ -775,10 +793,6 @@ export function useFlamengoStatus() {
               }
             }
 
-            const defaultChamp = DEFAULT_CHAMPIONSHIPS.find(
-              (dc) => dc.id === `tourn_${tourn.id}`,
-            );
-
             if (tourn.isLeague) {
               builtChamp = {
                 id: `tourn_${tourn.id}`,
@@ -805,25 +819,37 @@ export function useFlamengoStatus() {
                       defaultChamp?.fullStandings?.slice(0, 6),
               };
             } else {
+              const hasLiveKnockout = !!knockoutObj;
+              const resolvedKnockout = knockoutObj || defaultChamp?.knockout;
+
+              const resolvedStatus = evalResult
+                ? evalResult.label
+                : hasLiveKnockout && phaseTitle
+                  ? phaseTitle
+                  : defaultChamp?.status ||
+                    (groupTablesList.length > 0
+                      ? "Fase de Grupos"
+                      : "Em Disputa");
+
+              const resolvedPhase =
+                phaseTitle ||
+                defaultChamp?.phase ||
+                (groupTablesList.length > 0
+                  ? "Fase de Grupos"
+                  : tourn.defaultPhase);
+
+              const resolvedColor = evalResult
+                ? evalResult.badgeColor
+                : defaultChamp?.color ||
+                  "bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200/80 dark:border-gray-600/60 font-semibold";
+
               builtChamp = {
                 id: `tourn_${tourn.id}`,
                 url: tournamentUrl,
                 name: tourn.name,
-                status: evalResult
-                  ? evalResult.label
-                  : defaultChamp?.status ||
-                    (groupTablesList.length > 0
-                      ? "Fase de Grupos"
-                      : "Em Disputa"),
-                phase:
-                  phaseTitle ||
-                  defaultChamp?.phase ||
-                  (groupTablesList.length > 0
-                    ? "Fase de Grupos"
-                    : tourn.defaultPhase),
-                color: evalResult
-                  ? evalResult.badgeColor
-                  : defaultChamp?.color || "bg-amber-600 text-white font-bold",
+                status: resolvedStatus,
+                phase: resolvedPhase,
+                color: resolvedColor,
                 isLeague: false,
                 hasKnockout: true,
                 hasGroups:
@@ -836,12 +862,13 @@ export function useFlamengoStatus() {
                   miniStandingsList.length > 0
                     ? miniStandingsList
                     : defaultChamp?.standings,
-                knockout: knockoutObj || defaultChamp?.knockout,
+                knockout: resolvedKnockout,
               };
             }
 
             return (
-              builtChamp || {
+              builtChamp ||
+              defaultChamp || {
                 id: `tourn_${tourn.id}`,
                 url: tournamentUrl,
                 name: tourn.name,
@@ -852,14 +879,16 @@ export function useFlamengoStatus() {
             );
           } catch (e) {
             console.error(`Erro ao buscar campeonato ${tourn.name}:`, e);
-            return {
-              id: `tourn_${tourn.id}`,
-              url: tournamentUrl,
-              name: tourn.name,
-              status: "Em Disputa",
-              phase: tourn.defaultPhase,
-              color: tourn.defaultColor,
-            };
+            return (
+              defaultChamp || {
+                id: `tourn_${tourn.id}`,
+                url: tournamentUrl,
+                name: tourn.name,
+                status: "Em Disputa",
+                phase: tourn.defaultPhase,
+                color: tourn.defaultColor,
+              }
+            );
           }
         }),
       );
@@ -918,9 +947,6 @@ export function useFlamengoStatus() {
         const now = Date.now();
         setLastUpdated(now);
 
-        // Se o jogo está AO VIVO, cache dura 60s para tempo real!
-        // Se há jogo hoje, cache dura 10 minutos.
-        // Nos demais dias, cache de 24 horas.
         const isGameLive = fetchedMatch.isLive;
         const effectiveTtl = isGameLive
           ? 60 * 1000 // 1 minuto
@@ -1000,6 +1026,21 @@ export function useFlamengoStatus() {
   const homePos = nextMatch.isHome ? flaPos : oppPos;
   const awayPos = nextMatch.isHome ? oppPos : flaPos;
 
-
-  return { initialData, activeTab, setActiveTab, champViewMode, setChampViewMode, loading, lastUpdated, nextMatch, championships, fetchSofascoreData, homePos, awayPos, activeChamp, showPositions, activeClub: ACTIVE_CLUB };
+  return {
+    initialData,
+    activeTab,
+    setActiveTab,
+    champViewMode,
+    setChampViewMode,
+    loading,
+    lastUpdated,
+    nextMatch,
+    championships,
+    fetchSofascoreData,
+    homePos,
+    awayPos,
+    activeChamp,
+    showPositions,
+    activeClub: ACTIVE_CLUB,
+  };
 }

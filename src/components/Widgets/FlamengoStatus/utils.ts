@@ -6,17 +6,25 @@ export function extractMatchesRecursively(data: unknown): ExtractedMatch[] {
   const list: ExtractedMatch[] = [];
   const seenIds = new Set<string>();
 
-  function traverse(node: unknown) {
+  function traverse(node: unknown, inheritedRoundName?: string) {
     if (!node || typeof node !== "object") return;
 
     if (Array.isArray(node)) {
       for (const item of node) {
-        traverse(item);
+        traverse(item, inheritedRoundName);
       }
       return;
     }
 
     const obj = node as Record<string, unknown>;
+
+    let currentRoundName = inheritedRoundName;
+    if (typeof obj.description === "string" && obj.description.trim()) {
+      currentRoundName = obj.description.trim();
+    } else if (typeof obj.name === "string" && obj.name.trim()) {
+      currentRoundName = obj.name.trim();
+    }
+
     const homeTeam = obj.homeTeam as ExtractedMatch["homeTeam"];
     const awayTeam = obj.awayTeam as ExtractedMatch["awayTeam"];
     const startTimestamp = obj.startTimestamp as number | undefined;
@@ -26,17 +34,45 @@ export function extractMatchesRecursively(data: unknown): ExtractedMatch[] {
       const matchId = `${id || ""}-${startTimestamp || ""}-${homeTeam.id}-${awayTeam.id}`;
       if (!seenIds.has(matchId)) {
         seenIds.add(matchId);
-        list.push(obj as unknown as ExtractedMatch);
+        const matchObj = { ...obj } as unknown as ExtractedMatch;
+        if (!matchObj.roundInfo && currentRoundName) {
+          matchObj.roundInfo = { name: currentRoundName };
+        }
+        list.push(matchObj);
       }
     }
 
     if (obj.event && typeof obj.event === "object") {
-      traverse(obj.event);
+      traverse(obj.event, currentRoundName);
     }
 
     if (Array.isArray(obj.events)) {
       for (const ev of obj.events) {
-        traverse(ev);
+        traverse(ev, currentRoundName);
+      }
+    }
+
+    if (Array.isArray(obj.matches)) {
+      for (const m of obj.matches) {
+        traverse(m, currentRoundName);
+      }
+    }
+
+    if (Array.isArray(obj.blocks)) {
+      for (const b of obj.blocks) {
+        traverse(b, currentRoundName);
+      }
+    }
+
+    if (Array.isArray(obj.rounds)) {
+      for (const r of obj.rounds) {
+        traverse(r, currentRoundName);
+      }
+    }
+
+    if (Array.isArray(obj.cupTrees)) {
+      for (const ct of obj.cupTrees) {
+        traverse(ct, currentRoundName);
       }
     }
 
@@ -45,9 +81,14 @@ export function extractMatchesRecursively(data: unknown): ExtractedMatch[] {
         key !== "manager" &&
         key !== "players" &&
         key !== "substitutions" &&
-        key !== "treeViews"
+        key !== "event" &&
+        key !== "events" &&
+        key !== "matches" &&
+        key !== "blocks" &&
+        key !== "rounds" &&
+        key !== "cupTrees"
       ) {
-        traverse(obj[key]);
+        traverse(obj[key], currentRoundName);
       }
     }
   }

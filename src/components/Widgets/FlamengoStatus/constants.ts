@@ -15,7 +15,7 @@ export const DEFAULT_MOCK_MATCH: NextMatch = {
 
 export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
 export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
-export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-last5form`;
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-fixcups`;
 export const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas de cache
 
 export const MOCK_BRASILEIRAO_STANDINGS = [

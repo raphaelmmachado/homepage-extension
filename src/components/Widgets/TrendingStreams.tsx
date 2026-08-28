@@ -26,7 +26,6 @@ interface TmdbTrendingItem {
   popularity?: number;
 }
 
-
 interface CacheData {
   timestamp: number;
   data: Record<StreamProvider, StreamItem[]>;
@@ -68,23 +67,25 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
 export function TrendingStreams() {
   const [activeTab, setActiveTab] = useState<StreamProvider>("netflix");
   const [selectedStream, setSelectedStream] = useState<StreamItem | null>(null);
-  const [streams, setStreams] = useState<Record<StreamProvider, StreamItem[]>>(() => {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as CacheData;
-        return parsed.data;
-      } catch {
-        // ignore
+  const [streams, setStreams] = useState<Record<StreamProvider, StreamItem[]>>(
+    () => {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as CacheData;
+          return parsed.data;
+        } catch {
+          // ignore
+        }
       }
-    }
-    return {
-      netflix: [],
-      "amazon-prime-video": [],
-      max: [],
-      "paramount-plus": [],
-    };
-  });
+      return {
+        netflix: [],
+        "amazon-prime-video": [],
+        max: [],
+        "paramount-plus": [],
+      };
+    },
+  );
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -154,44 +155,45 @@ export function TrendingStreams() {
     }
   };
 
-  const fetchAllProviders = React.useCallback(async (
-    existingData?: Record<StreamProvider, StreamItem[]>,
-  ) => {
-    setLoading(true);
+  const fetchAllProviders = React.useCallback(
+    async (existingData?: Record<StreamProvider, StreamItem[]>) => {
+      setLoading(true);
 
-    // Concurrently fetch all
-    const results = await Promise.all(
-      PROVIDERS.map((p) => fetchProviderData(p.id)),
-    );
+      // Concurrently fetch all
+      const results = await Promise.all(
+        PROVIDERS.map((p) => fetchProviderData(p.id)),
+      );
 
-    const newData: Record<StreamProvider, StreamItem[]> = {
-      netflix:
-        results[0] && results[0].length > 0
-          ? results[0]
-          : existingData?.netflix || [],
-      "amazon-prime-video":
-        results[1] && results[1].length > 0
-          ? results[1]
-          : existingData?.["amazon-prime-video"] || [],
-      max:
-        results[2] && results[2].length > 0
-          ? results[2]
-          : existingData?.max || [],
-      "paramount-plus":
-        results[3] && results[3].length > 0
-          ? results[3]
-          : existingData?.["paramount-plus"] || [],
-    };
+      const newData: Record<StreamProvider, StreamItem[]> = {
+        netflix:
+          results[0] && results[0].length > 0
+            ? results[0]
+            : existingData?.netflix || [],
+        "amazon-prime-video":
+          results[1] && results[1].length > 0
+            ? results[1]
+            : existingData?.["amazon-prime-video"] || [],
+        max:
+          results[2] && results[2].length > 0
+            ? results[2]
+            : existingData?.max || [],
+        "paramount-plus":
+          results[3] && results[3].length > 0
+            ? results[3]
+            : existingData?.["paramount-plus"] || [],
+      };
 
-    setStreams(newData);
-    const now = Date.now();
-    setLastUpdated(now);
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ timestamp: now, data: newData }),
-    );
-    setLoading(false);
-  }, []);
+      setStreams(newData);
+      const now = Date.now();
+      setLastUpdated(now);
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({ timestamp: now, data: newData }),
+      );
+      setLoading(false);
+    },
+    [],
+  );
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -341,7 +343,7 @@ export function TrendingStreams() {
       </div>
 
       {lastUpdated && (
-        <div className="text-right mt-2 text-xs text-gray-400 dark:text-gray-500">
+        <div className="text-right mt-2 text-[11px] text-gray-400 dark:text-gray-500">
           Atualizado em {new Date(lastUpdated).toLocaleDateString("pt-BR")} às{" "}
           {new Date(lastUpdated).toLocaleTimeString("pt-BR", {
             hour: "2-digit",

@@ -113,7 +113,9 @@ export function FlamengoStatus() {
                       }}
                     />
                   </div>
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">{activeClub.name}</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">
+                    {activeClub.name}
+                  </span>
                   {showPositions && homePos !== undefined && (
                     <span className="text-[10px] font-extrabold px-2 py-0.5 mt-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/60 shadow-xs">
                       {homePos}º Lugar
@@ -223,7 +225,9 @@ export function FlamengoStatus() {
                       }}
                     />
                   </div>
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">{activeClub.name}</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">
+                    {activeClub.name}
+                  </span>
                   {showPositions && awayPos !== undefined && (
                     <span className="text-[10px] font-extrabold px-2 py-0.5 mt-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/60 shadow-xs">
                       {awayPos}º Lugar
@@ -746,7 +750,7 @@ export function FlamengoStatus() {
         )}
 
       {lastUpdated && (
-        <div className="text-right mt-3 text-xs text-gray-400 dark:text-gray-500">
+        <div className="text-right mt-3 text-[11px] text-gray-400 dark:text-gray-500">
           Atualizado em {new Date(lastUpdated).toLocaleDateString("pt-BR")} às{" "}
           {new Date(lastUpdated).toLocaleTimeString("pt-BR", {
             hour: "2-digit",
