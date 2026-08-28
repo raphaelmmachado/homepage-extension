@@ -15,6 +15,8 @@ export function FlamengoStatus() {
     previousMatch,
     nextMatch,
     followingMatch,
+    previousMatches,
+    followingMatches,
     championships,
     fetchSofascoreData,
     homePos,
@@ -23,6 +25,11 @@ export function FlamengoStatus() {
     showPositions,
     activeClub,
   } = useFlamengoStatus();
+
+  const isExpanded =
+    champViewMode[activeChamp.id] === "standings" ||
+    champViewMode[activeChamp.id] === "groups" ||
+    champViewMode[activeChamp.id] === "bracket";
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative">
@@ -84,6 +91,9 @@ export function FlamengoStatus() {
           previousMatch={previousMatch}
           nextMatch={nextMatch}
           followingMatch={followingMatch}
+          previousMatches={previousMatches}
+          followingMatches={followingMatches}
+          isExpanded={isExpanded}
           activeClub={activeClub}
           homePos={homePos}
           awayPos={awayPos}

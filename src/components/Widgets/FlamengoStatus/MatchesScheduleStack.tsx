@@ -7,6 +7,9 @@ interface MatchesScheduleStackProps {
   previousMatch: MatchSummary | null;
   nextMatch: NextMatch;
   followingMatch: MatchSummary | null;
+  previousMatches?: MatchSummary[];
+  followingMatches?: MatchSummary[];
+  isExpanded?: boolean;
   activeClub: ClubConfig;
   homePos?: number;
   awayPos?: number;
@@ -18,108 +21,162 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
   previousMatch,
   nextMatch,
   followingMatch,
+  previousMatches = [],
+  followingMatches = [],
+  isExpanded = false,
   activeClub,
   homePos,
   awayPos,
   showPositions,
   logoUrl,
 }) => {
+  const prevList =
+    isExpanded && previousMatches.length > 0
+      ? previousMatches.slice(0, 3)
+      : previousMatch
+        ? [previousMatch]
+        : [];
+
+  const followList =
+    isExpanded && followingMatches.length > 0
+      ? followingMatches.slice(0, 3)
+      : followingMatch
+        ? [followingMatch]
+        : [];
+
   return (
-    <div className="flex flex-col gap-3 h-full justify-between">
-      {/* 1. JOGO ANTERIOR */}
-      {previousMatch && (
-        <div className="bg-gray-50/90 dark:bg-gray-700/25 rounded-xl p-3 border border-gray-100 dark:border-gray-700/80 shadow-xs relative overflow-hidden transition-all hover:bg-gray-50 dark:hover:bg-gray-700/35">
-          <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-gray-200/50 dark:border-gray-700/50 text-[11px]">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-extrabold uppercase text-[9px] px-1.5 py-0.5 rounded bg-gray-200/80 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                Último jogo
-              </span>
-              <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
-                {previousMatch.competition}
-              </span>
-              {previousMatch.roundOrPhase && (
-                <>
-                  <span className="text-gray-400 font-normal text-[10px]">•</span>
-                  <span className="text-gray-500 dark:text-gray-400 text-[10px] truncate">
-                    {previousMatch.roundOrPhase}
-                  </span>
-                </>
-              )}
-            </div>
-            <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap">
-              {previousMatch.date}
+    <div
+      className={`flex flex-col h-full ${
+        isExpanded ? "justify-between gap-3 min-h-[720px]" : "justify-between gap-3"
+      }`}
+    >
+      {/* 1. SEÇÃO DE JOGOS ANTERIORES */}
+      <div className="flex flex-col gap-2">
+        {isExpanded && prevList.length > 1 && (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-500 dark:text-gray-400">
+              Últimos Resultados
+            </span>
+            <span className="text-[10px] text-gray-400 font-medium">
+              {prevList.length} jogos anteriores
             </span>
           </div>
+        )}
 
-          <div className="flex items-center justify-between gap-2">
-            {/* Time Mandante */}
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
-                <img
-                  src={
-                    previousMatch.homeTeamId === activeClub.id
-                      ? logoUrl
-                      : previousMatch.homeTeamLogo ||
-                        `https://api.sofascore.app/api/v1/team/${previousMatch.homeTeamId}/image`
-                  }
-                  alt={previousMatch.homeTeamName || "Mandante"}
-                  className="w-4 h-4 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoUrl;
-                  }}
-                />
+        {prevList.map((m, idx) => (
+          <div
+            key={m.id || idx}
+            className="bg-gray-50/90 dark:bg-gray-700/25 rounded-xl p-3 border border-gray-100 dark:border-gray-700/80 shadow-xs relative overflow-hidden transition-all hover:bg-gray-50 dark:hover:bg-gray-700/35"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-gray-200/50 dark:border-gray-700/50 text-[11px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-extrabold uppercase text-[9px] px-1.5 py-0.5 rounded bg-gray-200/80 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  {isExpanded ? `Jogo ${idx + 1}` : "Último jogo"}
+                </span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
+                  {m.competition}
+                </span>
+                {m.roundOrPhase && (
+                  <>
+                    <span className="text-gray-400 font-normal text-[10px]">•</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-[10px] truncate">
+                      {m.roundOrPhase}
+                    </span>
+                  </>
+                )}
               </div>
-              <span
-                className={`text-xs truncate font-medium ${
-                  previousMatch.homeTeamId === activeClub.id
-                    ? "font-bold text-gray-900 dark:text-white"
-                    : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {previousMatch.homeTeamName}
+              <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap">
+                {m.weekday ? `${m.weekday}, ` : ""}
+                {m.date}
               </span>
             </div>
 
-            {/* Placar Final */}
-            <div className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 bg-white dark:bg-gray-800 rounded-md border border-gray-200/70 dark:border-gray-700 font-bold text-xs shadow-xs text-gray-800 dark:text-gray-200">
-              <span>{previousMatch.homeScore ?? 0}</span>
-              <span className="text-gray-400 font-normal text-[10px]">x</span>
-              <span>{previousMatch.awayScore ?? 0}</span>
-            </div>
+            <div className="flex items-center justify-between gap-2">
+              {/* Time Mandante */}
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
+                  <img
+                    src={
+                      m.homeTeamId === activeClub.id
+                        ? logoUrl
+                        : m.homeTeamLogo ||
+                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`
+                    }
+                    alt={m.homeTeamName || "Mandante"}
+                    className="w-4 h-4 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = logoUrl;
+                    }}
+                  />
+                </div>
+                <span
+                  className={`text-xs truncate font-medium ${
+                    m.homeTeamId === activeClub.id
+                      ? "font-bold text-gray-900 dark:text-white"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {m.homeTeamName}
+                </span>
+              </div>
 
-            {/* Time Visitante */}
-            <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 text-right">
-              <span
-                className={`text-xs truncate font-medium ${
-                  previousMatch.awayTeamId === activeClub.id
-                    ? "font-bold text-gray-900 dark:text-white"
-                    : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {previousMatch.awayTeamName}
-              </span>
-              <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
-                <img
-                  src={
-                    previousMatch.awayTeamId === activeClub.id
-                      ? logoUrl
-                      : previousMatch.awayTeamLogo ||
-                        `https://api.sofascore.app/api/v1/team/${previousMatch.awayTeamId}/image`
+              {/* Placar Final */}
+              <div className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 bg-white dark:bg-gray-800 rounded-md border border-gray-200/70 dark:border-gray-700 font-bold text-xs shadow-xs text-gray-800 dark:text-gray-200">
+                <span
+                  className={
+                    (m.homeScore ?? 0) > (m.awayScore ?? 0)
+                      ? "text-emerald-600 dark:text-emerald-400 font-black"
+                      : ""
                   }
-                  alt={previousMatch.awayTeamName || "Visitante"}
-                  className="w-4 h-4 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoUrl;
-                  }}
-                />
+                >
+                  {m.homeScore ?? 0}
+                </span>
+                <span className="text-gray-400 font-normal text-[10px]">x</span>
+                <span
+                  className={
+                    (m.awayScore ?? 0) > (m.homeScore ?? 0)
+                      ? "text-emerald-600 dark:text-emerald-400 font-black"
+                      : ""
+                  }
+                >
+                  {m.awayScore ?? 0}
+                </span>
+              </div>
+
+              {/* Time Visitante */}
+              <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 text-right">
+                <span
+                  className={`text-xs truncate font-medium ${
+                    m.awayTeamId === activeClub.id
+                      ? "font-bold text-gray-900 dark:text-white"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {m.awayTeamName}
+                </span>
+                <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
+                  <img
+                    src={
+                      m.awayTeamId === activeClub.id
+                        ? logoUrl
+                        : m.awayTeamLogo ||
+                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`
+                    }
+                    alt={m.awayTeamName || "Visitante"}
+                    className="w-4 h-4 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = logoUrl;
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* 2. PRÓXIMO JOGO (CARD PRINCIPAL) */}
-      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 sm:p-4.5 border border-gray-100 dark:border-gray-700 relative overflow-hidden flex flex-col justify-between shadow-xs">
+      {/* 2. PRÓXIMO JOGO (CARD PRINCIPAL DESTACADO) */}
+      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 sm:p-4.5 border border-gray-100 dark:border-gray-700 relative overflow-hidden flex flex-col justify-between shadow-xs my-0.5">
         <div className="absolute top-0 left-0 w-1.5 h-full bg-red-600"></div>
 
         {/* Título e Campeonato Centralizado */}
@@ -320,106 +377,122 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
         )}
       </div>
 
-      {/* 3. SEGUNDO PRÓXIMO JOGO (SEGUINTE) */}
-      {followingMatch && (
-        <div className="bg-gray-50/90 dark:bg-gray-700/25 rounded-xl p-3 border border-gray-100 dark:border-gray-700/80 shadow-xs relative overflow-hidden transition-all hover:bg-gray-50 dark:hover:bg-gray-700/35">
-          <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-gray-200/50 dark:border-gray-700/50 text-[11px]">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-extrabold uppercase text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-                Seguinte
-              </span>
-              <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
-                {followingMatch.competition}
-              </span>
-              {followingMatch.roundOrPhase && (
-                <>
-                  <span className="text-gray-400 font-normal text-[10px]">•</span>
-                  <span className="text-gray-500 dark:text-gray-400 text-[10px] truncate">
-                    {followingMatch.roundOrPhase}
-                  </span>
-                </>
-              )}
-            </div>
-            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-              {followingMatch.weekday ? `${followingMatch.weekday}, ` : ""}
-              {followingMatch.date} • {followingMatch.time}
+      {/* 3. SEÇÃO DE PRÓXIMOS JOGOS (SEGUINTES) */}
+      <div className="flex flex-col gap-2">
+        {isExpanded && followList.length > 1 && (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400">
+              Sequência de Jogos
+            </span>
+            <span className="text-[10px] text-gray-400 font-medium">
+              {followList.length} próximos jogos
             </span>
           </div>
+        )}
 
-          <div className="flex items-center justify-between gap-2">
-            {/* Time Mandante */}
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
-                <img
-                  src={
-                    followingMatch.homeTeamId === activeClub.id
-                      ? logoUrl
-                      : followingMatch.homeTeamLogo ||
-                        `https://api.sofascore.app/api/v1/team/${followingMatch.homeTeamId}/image`
-                  }
-                  alt={followingMatch.homeTeamName || "Mandante"}
-                  className="w-4 h-4 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoUrl;
-                  }}
-                />
-              </div>
-              <span
-                className={`text-xs truncate font-medium ${
-                  followingMatch.homeTeamId === activeClub.id
-                    ? "font-bold text-gray-900 dark:text-white"
-                    : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {followingMatch.homeTeamName}
-              </span>
-            </div>
-
-            {/* Divisor / Estádio */}
-            <div className="flex flex-col items-center justify-center px-2 shrink-0 text-center">
-              <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
-                vs
-              </span>
-              {followingMatch.stadium && (
-                <span
-                  className="text-[9px] text-gray-400 dark:text-gray-500 truncate max-w-[85px]"
-                  title={followingMatch.stadium}
-                >
-                  {followingMatch.stadium}
+        {followList.map((m, idx) => (
+          <div
+            key={m.id || idx}
+            className="bg-gray-50/90 dark:bg-gray-700/25 rounded-xl p-3 border border-gray-100 dark:border-gray-700/80 shadow-xs relative overflow-hidden transition-all hover:bg-gray-50 dark:hover:bg-gray-700/35"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-gray-200/50 dark:border-gray-700/50 text-[11px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-extrabold uppercase text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                  {isExpanded ? `Jogo ${idx + 2}` : "Seguinte"}
                 </span>
-              )}
+                <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
+                  {m.competition}
+                </span>
+                {m.roundOrPhase && (
+                  <>
+                    <span className="text-gray-400 font-normal text-[10px]">•</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-[10px] truncate">
+                      {m.roundOrPhase}
+                    </span>
+                  </>
+                )}
+              </div>
+              <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                {m.weekday ? `${m.weekday}, ` : ""}
+                {m.date} • {m.time}
+              </span>
             </div>
 
-            {/* Time Visitante */}
-            <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 text-right">
-              <span
-                className={`text-xs truncate font-medium ${
-                  followingMatch.awayTeamId === activeClub.id
-                    ? "font-bold text-gray-900 dark:text-white"
-                    : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {followingMatch.awayTeamName}
-              </span>
-              <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
-                <img
-                  src={
-                    followingMatch.awayTeamId === activeClub.id
-                      ? logoUrl
-                      : followingMatch.awayTeamLogo ||
-                        `https://api.sofascore.app/api/v1/team/${followingMatch.awayTeamId}/image`
-                  }
-                  alt={followingMatch.awayTeamName || "Visitante"}
-                  className="w-4 h-4 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = logoUrl;
-                  }}
-                />
+            <div className="flex items-center justify-between gap-2">
+              {/* Time Mandante */}
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
+                  <img
+                    src={
+                      m.homeTeamId === activeClub.id
+                        ? logoUrl
+                        : m.homeTeamLogo ||
+                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`
+                    }
+                    alt={m.homeTeamName || "Mandante"}
+                    className="w-4 h-4 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = logoUrl;
+                    }}
+                  />
+                </div>
+                <span
+                  className={`text-xs truncate font-medium ${
+                    m.homeTeamId === activeClub.id
+                      ? "font-bold text-gray-900 dark:text-white"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {m.homeTeamName}
+                </span>
+              </div>
+
+              {/* Divisor / Estádio */}
+              <div className="flex flex-col items-center justify-center px-2 shrink-0 text-center">
+                <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
+                  vs
+                </span>
+                {m.stadium && (
+                  <span
+                    className="text-[9px] text-gray-400 dark:text-gray-500 truncate max-w-[85px]"
+                    title={m.stadium}
+                  >
+                    {m.stadium}
+                  </span>
+                )}
+              </div>
+
+              {/* Time Visitante */}
+              <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 text-right">
+                <span
+                  className={`text-xs truncate font-medium ${
+                    m.awayTeamId === activeClub.id
+                      ? "font-bold text-gray-900 dark:text-white"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {m.awayTeamName}
+                </span>
+                <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
+                  <img
+                    src={
+                      m.awayTeamId === activeClub.id
+                        ? logoUrl
+                        : m.awayTeamLogo ||
+                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`
+                    }
+                    alt={m.awayTeamName || "Visitante"}
+                    className="w-4 h-4 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = logoUrl;
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 };

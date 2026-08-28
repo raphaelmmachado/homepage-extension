@@ -3,6 +3,8 @@ import {
   DEFAULT_MOCK_MATCH,
   DEFAULT_PREVIOUS_MATCH,
   DEFAULT_FOLLOWING_MATCH,
+  DEFAULT_PREVIOUS_MATCHES,
+  DEFAULT_FOLLOWING_MATCHES,
   DEFAULT_CHAMPIONSHIPS,
   CACHE_KEY,
   CACHE_TTL,
@@ -608,6 +610,8 @@ export function getInitialCachedData(): {
   match: NextMatch;
   previousMatch: MatchSummary | null;
   followingMatch: MatchSummary | null;
+  previousMatches: MatchSummary[];
+  followingMatches: MatchSummary[];
   championships: Championship[];
   isStale: boolean;
   timestamp: number | null;
@@ -640,10 +644,26 @@ export function getInitialCachedData(): {
         };
       });
 
+      const prevList: MatchSummary[] =
+        Array.isArray(parsed.previousMatches) && parsed.previousMatches.length > 0
+          ? parsed.previousMatches
+          : parsed.previousMatch
+            ? [parsed.previousMatch]
+            : DEFAULT_PREVIOUS_MATCHES;
+
+      const followList: MatchSummary[] =
+        Array.isArray(parsed.followingMatches) && parsed.followingMatches.length > 0
+          ? parsed.followingMatches
+          : parsed.followingMatch
+            ? [parsed.followingMatch]
+            : DEFAULT_FOLLOWING_MATCHES;
+
       return {
         match: parsed.match || DEFAULT_MOCK_MATCH,
-        previousMatch: parsed.previousMatch || DEFAULT_PREVIOUS_MATCH,
-        followingMatch: parsed.followingMatch || DEFAULT_FOLLOWING_MATCH,
+        previousMatch: prevList[0] || DEFAULT_PREVIOUS_MATCH,
+        followingMatch: followList[0] || DEFAULT_FOLLOWING_MATCH,
+        previousMatches: prevList,
+        followingMatches: followList,
         championships: mergedChampionships,
         isStale,
         timestamp: parsed.timestamp || null,
@@ -656,6 +676,8 @@ export function getInitialCachedData(): {
     match: DEFAULT_MOCK_MATCH,
     previousMatch: DEFAULT_PREVIOUS_MATCH,
     followingMatch: DEFAULT_FOLLOWING_MATCH,
+    previousMatches: DEFAULT_PREVIOUS_MATCHES,
+    followingMatches: DEFAULT_FOLLOWING_MATCHES,
     championships: DEFAULT_CHAMPIONSHIPS,
     isStale: true,
     timestamp: null,

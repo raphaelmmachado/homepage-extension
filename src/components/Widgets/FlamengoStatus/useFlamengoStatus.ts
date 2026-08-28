@@ -12,6 +12,8 @@ import {
   DEFAULT_MOCK_MATCH,
   DEFAULT_PREVIOUS_MATCH,
   DEFAULT_FOLLOWING_MATCH,
+  DEFAULT_PREVIOUS_MATCHES,
+  DEFAULT_FOLLOWING_MATCHES,
   SOFASCORE_TEAM_ID,
   FLAMENGO_LOGO_URL,
   CACHE_KEY,
@@ -46,6 +48,12 @@ export function useFlamengoStatus() {
   const [followingMatch, setFollowingMatch] = useState<MatchSummary | null>(
     initialData.followingMatch || DEFAULT_FOLLOWING_MATCH,
   );
+  const [previousMatches, setPreviousMatches] = useState<MatchSummary[]>(
+    initialData.previousMatches || DEFAULT_PREVIOUS_MATCHES,
+  );
+  const [followingMatches, setFollowingMatches] = useState<MatchSummary[]>(
+    initialData.followingMatches || DEFAULT_FOLLOWING_MATCHES,
+  );
   const [championships, setChampionships] = useState<Championship[]>(
     initialData.championships || DEFAULT_CHAMPIONSHIPS,
   );
@@ -72,6 +80,12 @@ export function useFlamengoStatus() {
             setNextMatch(parsed.match);
             if (parsed.previousMatch) setPreviousMatch(parsed.previousMatch);
             if (parsed.followingMatch) setFollowingMatch(parsed.followingMatch);
+            if (Array.isArray(parsed.previousMatches) && parsed.previousMatches.length > 0) {
+              setPreviousMatches(parsed.previousMatches);
+            }
+            if (Array.isArray(parsed.followingMatches) && parsed.followingMatches.length > 0) {
+              setFollowingMatches(parsed.followingMatches);
+            }
             setChampionships(parsed.championships);
             setLastUpdated(parsed.timestamp);
             return;
@@ -84,17 +98,11 @@ export function useFlamengoStatus() {
 
     setLoading(true);
     try {
-      let fetchedMatch: NextMatch = {
-        opponent: "Adversário",
-        date: "Buscando...",
-        time: "--:--",
-        competition: "Buscando...",
-        isHome: true,
-        stadium: "Buscando...",
-      };
-
+      let fetchedMatch: NextMatch = DEFAULT_MOCK_MATCH;
       let previousMatchData: MatchSummary | null = previousMatch || DEFAULT_PREVIOUS_MATCH;
       let followingMatchData: MatchSummary | null = followingMatch || DEFAULT_FOLLOWING_MATCH;
+      let prevMatchesList: MatchSummary[] = previousMatches.length > 0 ? previousMatches : DEFAULT_PREVIOUS_MATCHES;
+      let followMatchesList: MatchSummary[] = followingMatches.length > 0 ? followingMatches : DEFAULT_FOLLOWING_MATCHES;
 
       const parseToMatchSummary = (
         event: ExtractedMatch,
@@ -207,12 +215,13 @@ export function useFlamengoStatus() {
           allTeamEvents.push(...previousEvents);
         }
 
-        // 1.1 Processa o Jogo Anterior (Mais recente concluído)
-        if (previousEvents.length > 0 && previousEvents[0]) {
-          previousMatchData = parseToMatchSummary(previousEvents[0], true);
+        // 1.1 Processa os Jogos Anteriores
+        if (previousEvents.length > 0) {
+          prevMatchesList = previousEvents.slice(0, 4).map((e) => parseToMatchSummary(e, true));
+          previousMatchData = prevMatchesList[0] || DEFAULT_PREVIOUS_MATCH;
         }
 
-        // 1.2 Processa o Próximo Jogo e o Segundo Próximo Jogo
+        // 1.2 Processa o Próximo Jogo e os Seguintes
         const liveEvent = upcomingEvents.find(
           (e: ExtractedMatch) => e.status?.type === "inprogress",
         );
@@ -291,80 +300,12 @@ export function useFlamengoStatus() {
               undefined,
           };
 
-          // Segundo próximo jogo
+          // Próximos jogos seguintes
           const nextIdx = upcomingEvents.indexOf(nextEvent);
-          const secondUpcoming = upcomingEvents[nextIdx + 1] || upcomingEvents[1];
-          if (secondUpcoming && secondUpcoming !== nextEvent) {
-            followingMatchData = parseToMatchSummary(secondUpcoming, false);
-          }
-        } else if (previousEvents.length > 0) {
-          const lastEvent = previousEvents[0];
-          if (lastEvent) {
-            const isHome = lastEvent.homeTeam?.id === SOFASCORE_TEAM_ID;
-            const opponentTeam = isHome
-              ? lastEvent.awayTeam
-              : lastEvent.homeTeam;
-            const competitionName =
-              (lastEvent.tournament as { uniqueTournament?: { name?: string; id?: number }; name?: string })?.uniqueTournament?.name ||
-              (lastEvent.tournament as { name?: string })?.name ||
-              "Competição";
-            const compId =
-              (lastEvent.tournament as { uniqueTournament?: { name?: string; id?: number } })?.uniqueTournament?.id ||
-              (lastEvent.tournament as { id?: number })?.id;
-
-            const { dateStr, weekdayStr, timeStr } = formatMatchDateTime(
-              lastEvent.startTimestamp || 0,
-            );
-
-            const stadiumName =
-              (lastEvent as { venue?: { stadium?: { name?: string }; name?: string } }).venue?.stadium?.name ||
-              (lastEvent as { venue?: { stadium?: { name?: string }; name?: string } }).venue?.name ||
-              getKnownStadium(lastEvent.homeTeam?.name || "");
-
-            const roundNumber = lastEvent.roundInfo?.round;
-            const roundName = lastEvent.roundInfo?.name;
-            const { phaseType, roundOrPhase } = detectPhaseType(
-              competitionName,
-              roundName,
-              roundNumber,
-              compId,
-            );
-
-            fetchedMatch = {
-              opponent:
-                opponentTeam?.shortName ||
-                opponentTeam?.name ||
-                "Adversário",
-              opponentId: opponentTeam?.id,
-              opponentLogo: opponentTeam?.id
-                ? `https://api.sofascore.app/api/v1/team/${opponentTeam.id}/image`
-                : undefined,
-              isHome,
-              date: dateStr,
-              weekday: weekdayStr,
-              time: timeStr,
-              competition: competitionName,
-              competitionId: compId,
-              stadium: stadiumName,
-              tvChannels: getBroadcastChannels(
-                competitionName,
-                isHome,
-                opponentTeam?.name || "",
-              ),
-              isLive: false,
-              roundOrPhase,
-              phaseType,
-              statusDescription: lastEvent.status?.description,
-              statusType: lastEvent.status?.type,
-              homeScore:
-                lastEvent.homeScore?.display ??
-                lastEvent.homeScore?.current ??
-                undefined,
-              awayScore:
-                lastEvent.awayScore?.display ??
-                lastEvent.awayScore?.current ??
-                undefined,
-            };
+          const followings = upcomingEvents.slice(nextIdx + 1, nextIdx + 5);
+          if (followings.length > 0) {
+            followMatchesList = followings.map((e) => parseToMatchSummary(e, false));
+            followingMatchData = followMatchesList[0] || DEFAULT_FOLLOWING_MATCH;
           }
         }
       } catch (err) {
@@ -373,6 +314,8 @@ export function useFlamengoStatus() {
 
       setPreviousMatch(previousMatchData);
       setFollowingMatch(followingMatchData);
+      setPreviousMatches(prevMatchesList);
+      setFollowingMatches(followMatchesList);
 
       // 2. Scraping detalhado de cada Campeonato em PARALELO
       const fetchedChamps: Championship[] = await Promise.all(
@@ -1072,6 +1015,8 @@ export function useFlamengoStatus() {
             match: fetchedMatch,
             previousMatch: previousMatchData,
             followingMatch: followingMatchData,
+            previousMatches: prevMatchesList,
+            followingMatches: followMatchesList,
             championships: finalChamps,
           }),
         );
@@ -1151,6 +1096,8 @@ export function useFlamengoStatus() {
     previousMatch,
     nextMatch,
     followingMatch,
+    previousMatches,
+    followingMatches,
     championships,
     fetchSofascoreData,
     homePos,
