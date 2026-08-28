@@ -1,4 +1,4 @@
-import type { NextMatch, Championship } from "./types";
+import type { NextMatch, Championship, MatchSummary } from "./types";
 import { ACTIVE_CLUB } from "./clubConfig";
 
 export { ACTIVE_CLUB };
@@ -13,9 +13,52 @@ export const DEFAULT_MOCK_MATCH: NextMatch = {
   stadium: "Buscando...",
 };
 
+export const DEFAULT_PREVIOUS_MATCH: MatchSummary = {
+  opponent: "Cruzeiro",
+  opponentId: 1954,
+  opponentLogo: "https://api.sofascore.app/api/v1/team/1954/image",
+  isHome: true,
+  homeTeamName: ACTIVE_CLUB.name,
+  awayTeamName: "Cruzeiro",
+  homeTeamId: ACTIVE_CLUB.id,
+  awayTeamId: 1954,
+  date: "20/08",
+  weekday: "Qua",
+  time: "21:30",
+  competition: "Brasileirão",
+  roundOrPhase: "Rodada 23",
+  phaseType: "league",
+  stadium: "Maracanã",
+  isFinished: true,
+  homeScore: 2,
+  awayScore: 1,
+  statusType: "finished",
+  statusDescription: "Encerrado",
+};
+
+export const DEFAULT_FOLLOWING_MATCH: MatchSummary = {
+  opponent: "Bahia",
+  opponentId: 1961,
+  opponentLogo: "https://api.sofascore.app/api/v1/team/1961/image",
+  isHome: false,
+  homeTeamName: "Bahia",
+  awayTeamName: ACTIVE_CLUB.name,
+  homeTeamId: 1961,
+  awayTeamId: ACTIVE_CLUB.id,
+  date: "12/09",
+  weekday: "Sáb",
+  time: "21:00",
+  competition: "Copa do Brasil",
+  roundOrPhase: "Quartas de Final",
+  phaseType: "knockout",
+  stadium: "Arena Fonte Nova",
+  tvChannels: ["SporTV", "Premiere", "Prime Video"],
+  isFinished: false,
+};
+
 export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
 export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
-export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-fixcups`;
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-stackmatches`;
 export const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas de cache
 
 export const MOCK_BRASILEIRAO_STANDINGS = [

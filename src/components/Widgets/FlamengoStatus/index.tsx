@@ -2,6 +2,7 @@ import { useFlamengoStatus } from "./useFlamengoStatus";
 import { resolveStadiumDisplay } from "./utils";
 import { FLAMENGO_LOGO_URL } from "./constants";
 import { SofascoreEmbedView } from "./SofascoreEmbedView";
+import { MatchesScheduleStack } from "./MatchesScheduleStack";
 
 export function FlamengoStatus() {
   const {
@@ -11,7 +12,9 @@ export function FlamengoStatus() {
     setChampViewMode,
     loading,
     lastUpdated,
+    previousMatch,
     nextMatch,
+    followingMatch,
     championships,
     fetchSofascoreData,
     homePos,
@@ -76,207 +79,17 @@ export function FlamengoStatus() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
-        {/* Lado Esquerdo - Próximo Jogo */}
-        <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 border border-gray-100 dark:border-gray-700 relative overflow-hidden flex flex-col justify-between h-full min-h-[220px]">
-          <div className="absolute top-0 left-0 w-1 h-full bg-red-600"></div>
-
-          {/* Título e Campeonato Centralizado */}
-          <div className="flex flex-col items-center text-center mb-4">
-            <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-400 font-bold">
-              Próximo jogo
-            </h3>
-            <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1 flex items-center justify-center gap-1.5 flex-wrap">
-              <span>{nextMatch.competition}</span>
-              {nextMatch.roundOrPhase && (
-                <>
-                  <span className="text-gray-400 font-normal">•</span>
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {nextMatch.roundOrPhase}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between my-auto">
-            {/* Time da Casa */}
-            <div className="flex flex-col items-center flex-1">
-              {nextMatch.isHome ? (
-                <>
-                  <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm mb-2 flex items-center justify-center">
-                    <img
-                      src={nextMatch.flamengoLogo || FLAMENGO_LOGO_URL}
-                      alt={activeClub.name}
-                      className="w-10 h-10 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = FLAMENGO_LOGO_URL;
-                      }}
-                    />
-                  </div>
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">
-                    {activeClub.name}
-                  </span>
-                  {showPositions && homePos !== undefined && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 mt-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/60 shadow-xs">
-                      {homePos}º Lugar
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm mb-2 flex items-center justify-center overflow-hidden">
-                    {nextMatch.opponentLogo ? (
-                      <img
-                        src={nextMatch.opponentLogo}
-                        alt={nextMatch.opponent}
-                        className="w-10 h-10 object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <span className="font-bold text-gray-400">
-                        {nextMatch.opponent.substring(0, 3).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">
-                    {nextMatch.opponent}
-                  </span>
-                  {showPositions && homePos !== undefined && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 mt-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/60 shadow-xs">
-                      {homePos}º Lugar
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Horário e Data ou Placar Ao Vivo */}
-            <div className="flex flex-col items-center px-2 sm:px-4">
-              {nextMatch.isLive ? (
-                <>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-red-600 text-white shadow-sm mb-1.5 animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-white inline-block animate-ping" />
-                    AO VIVO
-                  </span>
-                  <div className="flex items-center gap-2 text-2xl sm:text-3xl font-black text-gray-900 dark:text-white bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 px-3.5 py-1 rounded-lg shadow-sm">
-                    <span>
-                      {nextMatch.isHome
-                        ? (nextMatch.homeScore ?? 0)
-                        : (nextMatch.awayScore ?? 0)}
-                    </span>
-                    <span className="text-gray-400 text-lg font-normal">x</span>
-                    <span>
-                      {nextMatch.isHome
-                        ? (nextMatch.awayScore ?? 0)
-                        : (nextMatch.homeScore ?? 0)}
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold text-red-600 dark:text-red-400 mt-1.5">
-                    {nextMatch.statusDescription || "Em andamento"}
-                  </span>
-                  {resolveStadiumDisplay(nextMatch).stadiumName ? (
-                    <span
-                      className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[160px] mt-0.5"
-                      title={resolveStadiumDisplay(nextMatch).stadiumName}
-                    >
-                      {resolveStadiumDisplay(nextMatch).stadiumName}
-                    </span>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 whitespace-nowrap">
-                    {nextMatch.weekday ? `${nextMatch.weekday}, ` : ""}
-                    {nextMatch.date}
-                  </span>
-                  <span className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600 px-3 py-1 rounded-md bg-white dark:bg-gray-800 shadow-sm whitespace-nowrap">
-                    {nextMatch.time}
-                  </span>
-                  <div className="flex flex-col items-center mt-2 text-center max-w-[160px]">
-                    <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
-                      {resolveStadiumDisplay(nextMatch).venueType}
-                    </span>
-                    {resolveStadiumDisplay(nextMatch).stadiumName ? (
-                      <span
-                        className="text-[10px] text-gray-500 dark:text-gray-400 truncate w-full"
-                        title={resolveStadiumDisplay(nextMatch).stadiumName}
-                      >
-                        {resolveStadiumDisplay(nextMatch).stadiumName}
-                      </span>
-                    ) : null}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Time Visitante */}
-            <div className="flex flex-col items-center flex-1">
-              {!nextMatch.isHome ? (
-                <>
-                  <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm mb-2 flex items-center justify-center">
-                    <img
-                      src={nextMatch.flamengoLogo || FLAMENGO_LOGO_URL}
-                      alt={activeClub.name}
-                      className="w-10 h-10 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = FLAMENGO_LOGO_URL;
-                      }}
-                    />
-                  </div>
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">
-                    {activeClub.name}
-                  </span>
-                  {showPositions && awayPos !== undefined && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 mt-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/60 shadow-xs">
-                      {awayPos}º Lugar
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm mb-2 flex items-center justify-center overflow-hidden">
-                    {nextMatch.opponentLogo ? (
-                      <img
-                        src={nextMatch.opponentLogo}
-                        alt={nextMatch.opponent}
-                        className="w-10 h-10 object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <span className="font-bold text-gray-400">
-                        {nextMatch.opponent.substring(0, 3).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-center text-sm sm:text-base">
-                    {nextMatch.opponent}
-                  </span>
-                  {showPositions && awayPos !== undefined && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 mt-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/60 shadow-xs">
-                      {awayPos}º Lugar
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Rodapé - Canais de Transmissão / Streaming */}
-          {nextMatch.tvChannels && nextMatch.tvChannels.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-gray-200/70 dark:border-gray-700/60 flex flex-wrap items-center justify-center gap-1.5 text-xs text-center">
-              <span className="font-semibold text-gray-400 dark:text-gray-400">
-                Transmissão:
-              </span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {nextMatch.tvChannels.join(" • ")}
-              </span>
-            </div>
-          )}
-        </div>
+        {/* Lado Esquerdo - Jogos (Anterior, Próximo e Seguinte) */}
+        <MatchesScheduleStack
+          previousMatch={previousMatch}
+          nextMatch={nextMatch}
+          followingMatch={followingMatch}
+          activeClub={activeClub}
+          homePos={homePos}
+          awayPos={awayPos}
+          showPositions={showPositions}
+          logoUrl={FLAMENGO_LOGO_URL}
+        />
 
         {/* Lado Direito - Campeonatos */}
         <div className="flex flex-col h-full justify-between">

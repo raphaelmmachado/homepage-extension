@@ -24,6 +24,35 @@ export interface NextMatch {
   statusDescription?: string;
 }
 
+export interface MatchSummary {
+  id?: number;
+  opponent: string;
+  opponentId?: number;
+  opponentLogo?: string;
+  isHome: boolean;
+  homeTeamName?: string;
+  awayTeamName?: string;
+  homeTeamId?: number;
+  awayTeamId?: number;
+  homeTeamLogo?: string;
+  awayTeamLogo?: string;
+  date: string;
+  weekday?: string;
+  time: string;
+  competition: string;
+  competitionId?: number;
+  roundOrPhase?: string;
+  phaseType?: "league" | "group" | "knockout";
+  stadium?: string;
+  tvChannels?: string[];
+  isLive?: boolean;
+  isFinished?: boolean;
+  homeScore?: number;
+  awayScore?: number;
+  statusType?: string;
+  statusDescription?: string;
+}
+
 export interface KnockoutLeg {
   id?: number;
   homeTeam: string;

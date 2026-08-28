@@ -1,5 +1,15 @@
-import type { NextMatch, Championship, ExtractedMatch } from "./types";
-import { DEFAULT_MOCK_MATCH, DEFAULT_CHAMPIONSHIPS, CACHE_KEY, CACHE_TTL, KNOWN_STADIUMS, SOFASCORE_TEAM_ID, LFU_TEAMS } from "./constants";
+import type { NextMatch, Championship, ExtractedMatch, MatchSummary } from "./types";
+import {
+  DEFAULT_MOCK_MATCH,
+  DEFAULT_PREVIOUS_MATCH,
+  DEFAULT_FOLLOWING_MATCH,
+  DEFAULT_CHAMPIONSHIPS,
+  CACHE_KEY,
+  CACHE_TTL,
+  KNOWN_STADIUMS,
+  SOFASCORE_TEAM_ID,
+  LFU_TEAMS,
+} from "./constants";
 
 
 export function extractMatchesRecursively(data: unknown): ExtractedMatch[] {
@@ -596,6 +606,8 @@ export function evaluateKnockoutStatus(
 
 export function getInitialCachedData(): {
   match: NextMatch;
+  previousMatch: MatchSummary | null;
+  followingMatch: MatchSummary | null;
   championships: Championship[];
   isStale: boolean;
   timestamp: number | null;
@@ -606,7 +618,7 @@ export function getInitialCachedData(): {
       const parsed = JSON.parse(cached);
       const ttl = parsed.ttl || CACHE_TTL;
       const isStale = Date.now() - (parsed.timestamp || 0) >= ttl;
-      
+
       const cachedChamps: Championship[] = Array.isArray(parsed.championships)
         ? parsed.championships
         : [];
@@ -630,6 +642,8 @@ export function getInitialCachedData(): {
 
       return {
         match: parsed.match || DEFAULT_MOCK_MATCH,
+        previousMatch: parsed.previousMatch || DEFAULT_PREVIOUS_MATCH,
+        followingMatch: parsed.followingMatch || DEFAULT_FOLLOWING_MATCH,
         championships: mergedChampionships,
         isStale,
         timestamp: parsed.timestamp || null,
@@ -640,6 +654,8 @@ export function getInitialCachedData(): {
   }
   return {
     match: DEFAULT_MOCK_MATCH,
+    previousMatch: DEFAULT_PREVIOUS_MATCH,
+    followingMatch: DEFAULT_FOLLOWING_MATCH,
     championships: DEFAULT_CHAMPIONSHIPS,
     isStale: true,
     timestamp: null,
