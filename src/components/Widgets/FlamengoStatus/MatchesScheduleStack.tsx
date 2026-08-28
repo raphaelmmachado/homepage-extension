@@ -55,10 +55,10 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
         {isExpanded && prevList.length > 1 && (
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-500 dark:text-gray-400">
-              Últimos Resultados
+              Jogos Anteriores
             </span>
             <span className="text-[10px] text-gray-400 font-medium">
-              {prevList.length} jogos anteriores
+              Ordem decrescente
             </span>
           </div>
         )}
@@ -70,9 +70,6 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
           >
             <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-gray-200/50 dark:border-gray-700/50 text-[11px]">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-extrabold uppercase text-[9px] px-1.5 py-0.5 rounded bg-gray-200/80 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                  {isExpanded ? `Jogo ${idx + 1}` : "Último jogo"}
-                </span>
                 <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
                   {m.competition}
                 </span>
@@ -182,7 +179,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
         {/* Título e Campeonato Centralizado */}
         <div className="flex flex-col items-center text-center mb-2.5">
           <span className="text-[9px] uppercase tracking-wider text-red-600 dark:text-red-400 font-extrabold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200/50 dark:border-red-800/30">
-            Próximo jogo
+            {nextMatch.isLive ? "Partida Atual • Ao Vivo" : "Partida Atual"}
           </span>
           <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1 flex items-center justify-center gap-1.5 flex-wrap">
             <span>{nextMatch.competition}</span>
@@ -382,10 +379,10 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
         {isExpanded && followList.length > 1 && (
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400">
-              Sequência de Jogos
+              Próximos Jogos
             </span>
             <span className="text-[10px] text-gray-400 font-medium">
-              {followList.length} próximos jogos
+              Ordem crescente
             </span>
           </div>
         )}
@@ -397,9 +394,6 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
           >
             <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-gray-200/50 dark:border-gray-700/50 text-[11px]">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-extrabold uppercase text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-                  {isExpanded ? `Jogo ${idx + 2}` : "Seguinte"}
-                </span>
                 <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
                   {m.competition}
                 </span>
