@@ -9,8 +9,8 @@ export interface WidgetConfig {
 export const AVAILABLE_WIDGETS: WidgetConfig[] = [
   {
     id: "trending-streams",
-    name: "Em Alta nos Streamings",
-    description: "Mostra os filmes e séries mais populares no JustWatch BR."
+    name: "Recomendações & Streaming",
+    description: "Novidades, títulos aclamados e lançamentos dos principais streamings."
   },
   {
     id: "flamengo-status",

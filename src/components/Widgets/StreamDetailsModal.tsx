@@ -409,10 +409,16 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
         </div>
 
         {/* Footer do Modal com Botões Padronizados */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between gap-2">
-          {item.link ? (
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <a
-              href={`https://www.justwatch.com${item.link}`}
+              href={
+                item.link
+                  ? `https://www.justwatch.com${item.link}`
+                  : `https://www.google.com/search?q=${encodeURIComponent(
+                      `onde assistir ${details?.title || item.title}`,
+                    )}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors"
@@ -432,9 +438,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
                 />
               </svg>
             </a>
-          ) : (
-            <div></div>
-          )}
+          </div>
 
           <div className="flex items-center gap-2.5">
             {details?.trailerYoutubeKey && !showTrailer && (

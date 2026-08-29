@@ -1,6 +1,5 @@
 import { useRef } from "react";
 import { useFlamengoStatus } from "./useFlamengoStatus";
-import { resolveStadiumDisplay } from "./utils";
 import { FLAMENGO_LOGO_URL } from "./constants";
 import { SofascoreEmbedView } from "./SofascoreEmbedView";
 import { MatchesScheduleStack } from "./MatchesScheduleStack";
