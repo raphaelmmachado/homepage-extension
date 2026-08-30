@@ -1,60 +1,7 @@
 import React, { useState, useEffect } from "react";
-
-export interface StreamItemData {
-  id?: number;
-  mediaType?: "movie" | "tv";
-  title: string;
-  image: string;
-  link?: string;
-}
-
-interface StreamDetailsModalProps {
-  item: StreamItemData;
-  onClose: () => void;
-}
-
-interface MovieDetails {
-  title: string;
-  originalTitle?: string;
-  overview: string;
-  rating?: number;
-  year?: string;
-  genres: string[];
-  duration?: string;
-  director?: string;
-  cast: { name: string; character?: string }[];
-  trailerYoutubeKey?: string;
-  posterUrl?: string;
-}
-
-interface TmdbVideo {
-  site?: string;
-  iso_639_1?: string;
-  type?: string;
-  key?: string;
-}
-
-interface TmdbCastMember {
-  name: string;
-  character?: string;
-}
-
-interface TmdbCrewMember {
-  job?: string;
-  name: string;
-}
-
-interface TmdbGenre {
-  name: string;
-}
-
-interface TmdbCreator {
-  name: string;
-}
-
-
-const DETAILS_CACHE_PREFIX = "my-homepage-tmdb-detail-";
-const DETAILS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias
+import type { StreamDetailsModalProps, MovieDetails } from "./types";
+import { DETAILS_CACHE_PREFIX, DETAILS_CACHE_TTL } from "./constants";
+import { fetchTmdbMediaDetails } from "./services/tmdb";
 
 export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
   const cacheKey =
@@ -92,133 +39,32 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
       return;
     }
 
-    const fetchTmdbDetails = async () => {
+    const loadDetails = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const apiKey =
-          import.meta.env.VITE_TMDB_API_KEY ||
-          import.meta.env.TMDB_API_KEY ||
-          "3f463306e67d09f9203dcc85fbb35b41";
-
-        if (!apiKey) {
-          throw new Error("Chave da API do TMDB não configurada.");
-        }
-
-        let mediaType = item.mediaType;
-        let mediaId = item.id;
-
-        // Se o ID não foi passado diretamente, pesquisa pelo título
-        if (!mediaId || !mediaType) {
-          const cleanTitle = item.title.replace(/\s*\(\d{4}\)$/, "").trim();
-
-          const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=pt-BR&query=${encodeURIComponent(
-            cleanTitle,
-          )}&include_adult=false`;
-
-          const searchRes = await fetch(searchUrl);
-          if (!searchRes.ok) throw new Error("Falha ao pesquisar no TMDB");
-          const searchData = await searchRes.json();
-
-          if (!searchData.results || searchData.results.length === 0) {
-            throw new Error(`Nenhum resultado encontrado para "${cleanTitle}"`);
-          }
-
-          const media = searchData.results[0];
-          mediaType = media.media_type === "tv" ? "tv" : "movie";
-          mediaId = media.id;
-        }
-
-        // 2. Fetch Details com vídeos em PT e EN em uma ÚNICA requisição
-        const detailUrl = `https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${apiKey}&language=pt-BR&append_to_response=videos,credits&include_video_language=pt,en,null`;
-        const detailRes = await fetch(detailUrl);
-        if (!detailRes.ok) throw new Error("Falha ao obter detalhes no TMDB");
-        const detailData = await detailRes.json();
-
-        // 3. Find Trailer (prioriza PT, depois EN)
-        const allVideos: TmdbVideo[] = detailData.videos?.results || [];
-        const trailer =
-          allVideos.find(
-            (v: TmdbVideo) =>
-              v.site === "YouTube" &&
-              v.iso_639_1 === "pt" &&
-              (v.type === "Trailer" || v.type === "Teaser"),
-          ) ||
-          allVideos.find(
-            (v: TmdbVideo) =>
-              v.site === "YouTube" &&
-              (v.type === "Trailer" || v.type === "Teaser"),
-          ) ||
-          allVideos.find((v: TmdbVideo) => v.site === "YouTube");
-
-        // 4. Extract Cast & Crew
-        const castList = (detailData.credits?.cast || [])
-          .slice(0, 8)
-          .map((c: TmdbCastMember) => ({
-            name: c.name,
-            character: c.character,
-          }));
-
-        const director =
-          detailData.credits?.crew?.find((c: TmdbCrewMember) => c.job === "Director")
-            ?.name ||
-          detailData.created_by?.map((c: TmdbCreator) => c.name).join(", ");
-
-        const genres = (detailData.genres || []).map((g: TmdbGenre) => g.name);
-        const year = (
-          detailData.release_date ||
-          detailData.first_air_date ||
-          ""
-        ).substring(0, 4);
-
-        let duration: string | undefined;
-        if (detailData.runtime) {
-          const hours = Math.floor(detailData.runtime / 60);
-          const mins = detailData.runtime % 60;
-          duration = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-        } else if (detailData.number_of_seasons) {
-          duration = `${detailData.number_of_seasons} ${
-            detailData.number_of_seasons > 1 ? "Temporadas" : "Temporada"
-          }`;
-        }
-
-        const movieDetails: MovieDetails = {
-          title: detailData.title || detailData.name || item.title,
-          originalTitle:
-            detailData.original_title || detailData.original_name,
-          overview:
-            detailData.overview ||
-            "Nenhuma sinopse disponível em português no momento.",
-          rating: detailData.vote_average
-            ? Number(detailData.vote_average.toFixed(1))
-            : undefined,
-          year: year || undefined,
-          genres,
-          duration,
-          director,
-          cast: castList,
-          trailerYoutubeKey: trailer?.key,
-          posterUrl: detailData.poster_path
-            ? `https://image.tmdb.org/t/p/w500${detailData.poster_path}`
-            : item.image,
-        };
+        const movieDetails = await fetchTmdbMediaDetails(item);
 
         if (isMounted) {
           setDetails(movieDetails);
 
           // Salva no localStorage para as próximas visualizações terem 0 requisições
-          const resolvedCacheKey = `${DETAILS_CACHE_PREFIX}${mediaType}-${mediaId}`;
-          try {
-            localStorage.setItem(
-              resolvedCacheKey,
-              JSON.stringify({
-                timestamp: Date.now(),
-                data: movieDetails,
-              }),
-            );
-          } catch {
-            // ignore localStorage quota limit
+          const mediaType = item.mediaType || "movie";
+          const mediaId = item.id;
+          if (mediaId) {
+            const resolvedCacheKey = `${DETAILS_CACHE_PREFIX}${mediaType}-${mediaId}`;
+            try {
+              localStorage.setItem(
+                resolvedCacheKey,
+                JSON.stringify({
+                  timestamp: Date.now(),
+                  data: movieDetails,
+                }),
+              );
+            } catch {
+              // ignore localStorage quota limit
+            }
           }
         }
       } catch (err) {
@@ -232,7 +78,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
       }
     };
 
-    fetchTmdbDetails();
+    loadDetails();
 
     return () => {
       isMounted = false;
@@ -268,7 +114,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             title="Fechar"
           >
             <svg
@@ -328,7 +174,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
                   </div>
                   <button
                     onClick={() => setShowTrailer(false)}
-                    className="self-start text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    className="self-start text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Voltar para sinopse e elenco
                   </button>

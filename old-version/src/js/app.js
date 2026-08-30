@@ -60,7 +60,7 @@ import {
 export const showModal = (
   message,
   title = "Atenção",
-  buttons = [{ text: "OK", class: "primary" }]
+  buttons = [{ text: "OK", class: "primary" }],
 ) => {
   return new Promise((resolve) => {
     alertDialogTitle.textContent = title;
@@ -89,7 +89,7 @@ export const showModal = (
 
 const createSearchResultsElement = (
   searchTerm = "",
-  option = { url: "", icon: "", placeholder: "" }
+  option = { url: "", icon: "", placeholder: "" },
 ) => {
   const seachEnginesSuggestions = document.createElement("a");
   seachEnginesSuggestions.href = `${option.url}${searchTerm}`;
@@ -124,10 +124,10 @@ export const render = (searchTerm = "") => {
           lowerCaseTitle.includes(lowerCaseSearchTerm) ||
           lowerCaseDescription.includes(lowerCaseSearchTerm)
         );
-      }
+      },
     );
     const filteredArticles = articles.filter((a) =>
-      a.title.toLowerCase().includes(lowerCaseSearchTerm)
+      a.title.toLowerCase().includes(lowerCaseSearchTerm),
     );
 
     // CRIAR ELEMENTO DE RESULTADOS
@@ -174,7 +174,7 @@ export const render = (searchTerm = "") => {
       searchOptions.forEach((option) => {
         const seachEnginesSuggestions = createSearchResultsElement(
           searchTerm,
-          option
+          option,
         );
 
         resultsContainer.appendChild(seachEnginesSuggestions);
@@ -188,10 +188,10 @@ export const render = (searchTerm = "") => {
     containersWrapper.innerHTML = "";
     containers.forEach((container) => {
       const containerBookmarks = bookmarks.filter(
-        (b) => b.containerId === container.id
+        (b) => b.containerId === container.id,
       );
       containersWrapper.appendChild(
-        createContainerElement(container, containerBookmarks)
+        createContainerElement(container, containerBookmarks),
       );
     });
     if (containersWrapper.innerHTML !== "" || containers.length === 0) {
@@ -212,14 +212,14 @@ const createContainerElement = (container, containerBookmarks) => {
     setTimeout(() => e.target.classList.add("dragging"), 0);
   });
   element.addEventListener("dragend", (e) =>
-    e.target.classList.remove("dragging")
+    e.target.classList.remove("dragging"),
   );
   element.addEventListener("dragover", (e) => {
     e.preventDefault();
     e.target.closest(".group\\/category").classList.add("drag-over");
   });
   element.addEventListener("dragleave", (e) =>
-    e.target.closest(".group\\/category").classList.remove("drag-over")
+    e.target.closest(".group\\/category").classList.remove("drag-over"),
   );
   element.addEventListener("drop", (e) => {
     e.preventDefault();
@@ -234,7 +234,7 @@ const createContainerElement = (container, containerBookmarks) => {
       }
     } else if (draggedContainerId && draggedContainerId !== container.id) {
       const draggedIndex = containers.findIndex(
-        (c) => c.id === draggedContainerId
+        (c) => c.id === draggedContainerId,
       );
       const targetIndex = containers.findIndex((c) => c.id === container.id);
       const [draggedItem] = containers.splice(draggedIndex, 1);
@@ -285,7 +285,7 @@ const createContainerElement = (container, containerBookmarks) => {
       [
         { text: "Cancelar", class: "secondary", value: false },
         { text: "Remover", class: "danger", value: true },
-      ]
+      ],
     );
     if (confirmed) {
       setContainers(containers.filter((c) => c.id !== container.id));
@@ -303,11 +303,11 @@ const createContainerElement = (container, containerBookmarks) => {
   grid.className =
     currentLayout === "grid" ? "flex flex-wrap gap-2" : "flex flex-col gap-1";
   containerBookmarks.forEach((bookmark) =>
-    grid.appendChild(createBookmarkElement(bookmark))
+    grid.appendChild(createBookmarkElement(bookmark)),
   );
   const addBookmarkBox = createAddBookmarkBox(
     container.id,
-    containerBookmarks.length > 0
+    containerBookmarks.length > 0,
   );
   grid.appendChild(addBookmarkBox);
   element.appendChild(header);
@@ -329,14 +329,14 @@ const createBookmarkElement = (bookmark) => {
       "relative flex items-center group/item p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50";
     // adicionar target="_blank" ao element <a> para abrir em nova guia
     element.innerHTML = `
-                    <a href="${
+                    <a target="_blank" href="${
                       bookmark.url
                     }" rel="noopener noreferrer" class="flex items-center flex-grow" title="${
-      bookmark.description || ""
-    }">
+                      bookmark.description || ""
+                    }">
                         <img src="${faviconUrl}" alt="${
-      bookmark.title ?? bookmark.name
-    }" class="w-6 h-6 object-contain mr-3 rounded" />
+                          bookmark.title ?? bookmark.name
+                        }" class="w-6 h-6 object-contain mr-3 rounded" />
                         <span class="flex-grow text-sm text-gray-700 dark:text-gray-300">${
                           bookmark.title ?? bookmark.name
                         }</span>
@@ -356,13 +356,13 @@ const createBookmarkElement = (bookmark) => {
     element.className =
       "relative flex flex-col items-center group/item w-20 rounded-lg  hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors duration-200";
     element.innerHTML = `
-                    <a href="${bookmark.url}" rel="noopener noreferrer"
+                    <a target="_blank" href="${bookmark.url}" rel="noopener noreferrer"
                       class="flex flex-col items-center p-2" title="${
                         bookmark.description || ""
                       }">
                         <img src="${faviconUrl}" alt="Ícone de ${
-      bookmark.title ?? bookmark.name
-    }" class="w-7 h-7 object-contain mb-2 rounded-md shadow-sm"  />
+                          bookmark.title ?? bookmark.name
+                        }" class="w-7 h-7 object-contain mb-2 rounded-md shadow-sm"  />
                         <span class="text-sm text-gray-700 dark:text-gray-300 text-center w-full px-1">${
                           bookmark.title ?? bookmark.name
                         }</span>
@@ -378,7 +378,7 @@ const createBookmarkElement = (bookmark) => {
     setTimeout(() => element.classList.add("dragging"), 0);
   });
   element.addEventListener("dragend", () =>
-    element.classList.remove("dragging")
+    element.classList.remove("dragging"),
   );
   element.addEventListener("dragover", (e) => {
     e.preventDefault();
@@ -386,7 +386,7 @@ const createBookmarkElement = (bookmark) => {
     element.classList.add("drag-over-bookmark");
   });
   element.addEventListener("dragleave", () =>
-    element.classList.remove("drag-over-bookmark")
+    element.classList.remove("drag-over-bookmark"),
   );
   element.addEventListener("drop", (e) => {
     e.preventDefault();
@@ -492,7 +492,7 @@ const createArticleElement = (article) => {
         }</p>
         <div class="flex items-center justify-between">
           <span class="text-xs text-gray-500 dark:text-gray-500">${new Date(
-            article.dateAdded
+            article.dateAdded,
           ).toLocaleDateString("pt-BR")}
           </span>
           <div class="flex gap-2">
@@ -518,7 +518,7 @@ const createArticleElement = (article) => {
         [
           { text: "Cancelar", class: "secondary", value: false },
           { text: "Remover", class: "danger", value: true },
-        ]
+        ],
       );
       if (confirmed) {
         setArticles(articles.filter((a) => a.id !== article.id));

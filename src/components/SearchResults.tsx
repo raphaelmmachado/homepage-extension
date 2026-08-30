@@ -61,6 +61,8 @@ export function SearchResults({
                 <a
                   key={option.name}
                   href={`${option.url}${encodeURIComponent(searchTerm)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onMouseDown={(e) => {
                     if (e.button === 1) {
                       e.preventDefault();

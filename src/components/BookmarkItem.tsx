@@ -1,5 +1,8 @@
 import { useState } from "react";
-import type { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
+import type {
+  DraggableProvided,
+  DraggableStateSnapshot,
+} from "@hello-pangea/dnd";
 import type { Bookmark, Layout } from "../types";
 import { extractFaviconFromURL } from "../helpers";
 import * as svgs from "../svgs";
@@ -51,14 +54,17 @@ export function BookmarkItem({
       >
         <a
           href={bookmark.url}
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={handleClick}
-          onMouseDown={(e) => {
-            if (e.button === 1) {
-              e.preventDefault();
-              handleClick();
-              window.open(bookmark.url, "_blank");
-            }
-          }}
+          // SE QUISER ABRIR EM NOVA ABA COM O CLIQUE DO MEIO, DESCOMENTE O CÓDIGO ABAIXO
+          // onMouseDown={(e) => {
+          //   if (e.button === 1) {
+          //     e.preventDefault();
+          //     handleClick();
+          //     window.open(bookmark.url, "_blank");
+          //   }
+          // }}
           className="flex items-center flex-grow"
           title={bookmark.description || ""}
         >
@@ -95,16 +101,19 @@ export function BookmarkItem({
     >
       <a
         href={bookmark.url}
+        target="_blank"
+        rel="noopener noreferrer"
         onClick={handleClick}
-        onMouseDown={(e) => {
-          if (e.button === 1) {
-            e.preventDefault();
-            handleClick();
-            window.open(bookmark.url, "_blank");
-          }
-        }}
+        // SE QUISER ABRIR EM NOVA ABA COM O CLIQUE DO MEIO, DESCOMENTE O CÓDIGO ABAIXO
+        // onMouseDown={(e) => {
+        //   if (e.button === 1) {
+        //     e.preventDefault();
+        //     handleClick();
+        //     window.open(bookmark.url, "_blank");
+        //   }
+        // }}
         className="flex flex-col items-center p-2 w-full"
-        title={`${bookmark.name || bookmark.title}${bookmark.description ? '\n' + bookmark.description : ''}`}
+        title={`${bookmark.name || bookmark.title}${bookmark.description ? "\n" + bookmark.description : ""}`}
       >
         <img
           src={iconSrc}
@@ -124,11 +133,11 @@ export function BookmarkItem({
           e.stopPropagation();
           onEdit();
         }}
-        className="absolute top-1 right-1 p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-md opacity-0 group-hover/item:opacity-100 transition-all duration-200 shadow-sm hover:scale-110 z-20"
+        className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-transparent opacity-0 group-hover/item:opacity-100 transition-all duration-200 hover:scale-110 z-20 cursor-pointer"
+        title="Opções do favorito"
       >
         <div dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }} />
       </button>
     </div>
   );
 }
-
