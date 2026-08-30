@@ -183,7 +183,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
         {/* Título e Campeonato Centralizado */}
         <div className="flex flex-col items-center text-center mb-2.5">
           <span className="text-[9px] uppercase tracking-wider text-red-600 dark:text-red-400 font-extrabold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200/50 dark:border-red-800/30">
-            {nextMatch.isLive ? "Partida Atual • Ao Vivo" : "Partida Atual"}
+            {nextMatch.isLive ? "Ao Vivo" : "Próxima Partida"}
           </span>
           <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1 flex items-center justify-center gap-1.5 flex-wrap">
             <span>{nextMatch.competition}</span>
