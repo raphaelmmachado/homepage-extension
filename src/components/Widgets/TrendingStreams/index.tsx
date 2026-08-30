@@ -27,7 +27,7 @@ export function TrendingStreams() {
   } = useTrendingStreams();
 
   return (
-    <section className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-200/80 dark:border-gray-700/70 shadow-xs mb-6 relative group/carousel transition-colors">
+    <section id="streams" className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-200/80 dark:border-gray-700/70 shadow-xs mb-6 relative group/carousel transition-colors">
       {/* Controles e Filtros */}
       <StreamFilters
         provider={provider}

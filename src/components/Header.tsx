@@ -52,7 +52,7 @@ export function Header({
   const engine = searchEngines[activeSearchEngine];
 
   return (
-    <nav className="sticky top-0 z-30 py-4 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-sm">
+    <nav id="barra" className="sticky top-0 z-30 py-4 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-sm">
       <div className="mx-auto flex justify-center gap-4 px-4 max-w-7xl">
         <button
           onClick={toggleTheme}

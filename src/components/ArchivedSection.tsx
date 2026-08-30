@@ -59,6 +59,7 @@ export function ArchivedSection({
 
   return (
     <section
+      id="arquivados"
       className="mb-8"
       onDragOver={(e) => {
         e.preventDefault();

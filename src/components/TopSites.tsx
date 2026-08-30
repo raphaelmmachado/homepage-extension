@@ -23,7 +23,7 @@ export function TopSites({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md mb-6 relative transition-all w-full col-span-full">
+    <div id="topsites" className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md mb-6 relative transition-all w-full col-span-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
           Mais Acessados

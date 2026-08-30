@@ -66,7 +66,7 @@ export function FlamengoStatus() {
   return (
     <div
       ref={containerRef}
-      id="sports-status-widget"
+      id="flamengo"
       className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative scroll-mt-6"
     >
       <div className="flex items-center justify-between mb-6">

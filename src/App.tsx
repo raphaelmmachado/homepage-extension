@@ -165,6 +165,7 @@ function App() {
 
             {/* 2. Favoritos / Pastas */}
             <div
+              id="favoritos"
               className={`grid ${currentLayout === "grid" ? "lg:grid-cols-3 md:grid-cols-2 grid-cols-1" : "lg:grid-cols-4 md:grid-cols-3 grid-cols-2"} gap-6 mb-8`}
             >
               {activeContainers.map((container) => (
