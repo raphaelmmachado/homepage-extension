@@ -1,5 +1,5 @@
 import React from "react";
-import type { TournamentBracket, BracketMatchNode, Championship } from "./types";
+import type { TournamentBracket, BracketRound, BracketMatchNode, Championship } from "./types";
 import type { ClubConfig } from "./clubConfig";
 
 interface NativeBracketViewProps {
@@ -205,7 +205,7 @@ export const NativeBracketView: React.FC<NativeBracketViewProps> = ({
 
       {/* Árvore / Colunas do Chaveamento (Responsivo) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-start">
-        {bracket.rounds.map((round, rIdx) => (
+        {bracket.rounds.map((round: BracketRound, rIdx: number) => (
           <div key={rIdx} className="flex flex-col gap-3">
             {/* Header da Rodada */}
             <div className="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-gray-700">

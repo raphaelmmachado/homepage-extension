@@ -88,24 +88,22 @@ export interface GroupTable {
 }
 
 export interface BracketMatchNode {
-  id: string | number;
+  id: string;
   homeTeam: string;
   homeTeamId?: number;
-  homeTeamLogo?: string;
   awayTeam: string;
   awayTeamId?: number;
-  awayTeamLogo?: string;
-  homeScoreLeg1?: number | string;
-  awayScoreLeg1?: number | string;
-  homeScoreLeg2?: number | string;
-  awayScoreLeg2?: number | string;
-  homeScoreAgg?: number | string;
-  awayScoreAgg?: number | string;
-  penalties?: string;
+  homeScoreLeg1?: number;
+  awayScoreLeg1?: number;
+  homeScoreLeg2?: number;
+  awayScoreLeg2?: number;
+  homeScoreAgg?: number;
+  awayScoreAgg?: number;
   scoreDisplay?: string;
   date?: string;
-  status?: "finished" | "inprogress" | "notstarted";
-  winner?: "home" | "away" | "tbd";
+  penalties?: string;
+  status?: "finished" | "in_progress" | "inprogress" | "notstarted" | "scheduled" | string;
+  winner?: "home" | "away" | "tbd" | string;
 }
 
 export interface BracketRound {
@@ -128,9 +126,9 @@ export interface Championship {
   standings?: StandingsTeamRow[];
   fullStandings?: StandingsTeamRow[];
   groupTables?: GroupTable[];
+  bracket?: TournamentBracket;
   hasGroups?: boolean;
   hasKnockout?: boolean;
-  bracket?: TournamentBracket;
   knockout?: {
     opponent: string;
     opponentId?: number;
