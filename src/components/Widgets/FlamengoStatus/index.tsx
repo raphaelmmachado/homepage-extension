@@ -1,7 +1,9 @@
 import { useRef } from "react";
 import { useFlamengoStatus } from "./useFlamengoStatus";
 import { FLAMENGO_LOGO_URL } from "./constants";
-import { SofascoreEmbedView } from "./SofascoreEmbedView";
+import { NativeStandingsView } from "./NativeStandingsView";
+import { NativeBracketView } from "./NativeBracketView";
+import { NativeGroupStageView } from "./NativeGroupStageView";
 import { MatchesScheduleStack } from "./MatchesScheduleStack";
 
 export function FlamengoStatus() {
@@ -536,7 +538,7 @@ export function FlamengoStatus() {
         </div>
       </div>
 
-      {/* Seção Expandida em Largura Total (Abaixo dos dois cards com Embed oficial Sofascore) */}
+      {/* Seção Expandida em Largura Total (Componentes Nativos 100% integrados) */}
       {champViewMode[activeChamp.id] &&
         champViewMode[activeChamp.id] !== "compact" && (
           <div
@@ -546,26 +548,30 @@ export function FlamengoStatus() {
           >
             {activeChamp.id === "tourn_325" &&
             champViewMode[activeChamp.id] === "standings" ? (
-              <SofascoreEmbedView
-                type="brasileirao_standings"
+              <NativeStandingsView
+                standings={activeChamp.fullStandings || activeChamp.standings}
+                activeClub={activeClub}
                 onClose={handleCloseEmbed}
               />
             ) : activeChamp.id === "tourn_384" &&
               champViewMode[activeChamp.id] === "bracket" ? (
-              <SofascoreEmbedView
-                type="libertadores_bracket"
+              <NativeBracketView
+                championship={activeChamp}
+                activeClub={activeClub}
                 onClose={handleCloseEmbed}
               />
             ) : activeChamp.id === "tourn_384" &&
               champViewMode[activeChamp.id] === "groups" ? (
-              <SofascoreEmbedView
-                type="libertadores_groups"
+              <NativeGroupStageView
+                groupTables={activeChamp.groupTables}
+                activeClub={activeClub}
                 onClose={handleCloseEmbed}
               />
             ) : activeChamp.id === "tourn_373" &&
               champViewMode[activeChamp.id] === "bracket" ? (
-              <SofascoreEmbedView
-                type="cdb_bracket"
+              <NativeBracketView
+                championship={activeChamp}
+                activeClub={activeClub}
                 onClose={handleCloseEmbed}
               />
             ) : null}

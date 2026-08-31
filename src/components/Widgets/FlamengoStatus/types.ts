@@ -87,6 +87,36 @@ export interface GroupTable {
   rows: StandingsTeamRow[];
 }
 
+export interface BracketMatchNode {
+  id: string | number;
+  homeTeam: string;
+  homeTeamId?: number;
+  homeTeamLogo?: string;
+  awayTeam: string;
+  awayTeamId?: number;
+  awayTeamLogo?: string;
+  homeScoreLeg1?: number | string;
+  awayScoreLeg1?: number | string;
+  homeScoreLeg2?: number | string;
+  awayScoreLeg2?: number | string;
+  homeScoreAgg?: number | string;
+  awayScoreAgg?: number | string;
+  penalties?: string;
+  scoreDisplay?: string;
+  date?: string;
+  status?: "finished" | "inprogress" | "notstarted";
+  winner?: "home" | "away" | "tbd";
+}
+
+export interface BracketRound {
+  name: string;
+  matches: BracketMatchNode[];
+}
+
+export interface TournamentBracket {
+  rounds: BracketRound[];
+}
+
 export interface Championship {
   id: string;
   url?: string;
@@ -100,6 +130,7 @@ export interface Championship {
   groupTables?: GroupTable[];
   hasGroups?: boolean;
   hasKnockout?: boolean;
+  bracket?: TournamentBracket;
   knockout?: {
     opponent: string;
     opponentId?: number;
