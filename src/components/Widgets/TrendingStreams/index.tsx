@@ -118,10 +118,3 @@ export function TrendingStreams() {
     </section>
   );
 }
-
-export * from "./types";
-export * from "./constants";
-export * from "./useTrendingStreams";
-export { StreamCard } from "./StreamCard";
-export { StreamFilters } from "./StreamFilters";
-export { StreamDetailsModal } from "./StreamDetailsModal";

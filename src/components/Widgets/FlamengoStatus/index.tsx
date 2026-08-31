@@ -6,6 +6,7 @@ import { MatchesScheduleStack } from "./MatchesScheduleStack";
 
 export function FlamengoStatus() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const expandedViewRef = useRef<HTMLDivElement>(null);
   const {
     activeTab,
     setActiveTab,
@@ -41,12 +42,23 @@ export function FlamengoStatus() {
     }, 50);
   };
 
+  const scrollToExpanded = () => {
+    setTimeout(() => {
+      expandedViewRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+  };
+
   const toggleViewMode = (mode: "standings" | "bracket" | "groups") => {
     setChampViewMode((prev) => {
       const currentMode = prev[activeChamp.id] || "compact";
       const nextMode = currentMode === mode ? "compact" : mode;
       if (nextMode === "compact") {
         scrollToWidget();
+      } else {
+        scrollToExpanded();
       }
       return {
         ...prev,
@@ -527,7 +539,11 @@ export function FlamengoStatus() {
       {/* Seção Expandida em Largura Total (Abaixo dos dois cards com Embed oficial Sofascore) */}
       {champViewMode[activeChamp.id] &&
         champViewMode[activeChamp.id] !== "compact" && (
-          <div className="mt-6 pt-6 border-t border-gray-200/80 dark:border-gray-700/80 w-full animate-fadeIn">
+          <div
+            ref={expandedViewRef}
+            id="tabelas-sofascore"
+            className="mt-6 pt-6 border-t border-gray-200/80 dark:border-gray-700/80 w-full animate-fadeIn scroll-mt-6"
+          >
             {activeChamp.id === "tourn_325" &&
             champViewMode[activeChamp.id] === "standings" ? (
               <SofascoreEmbedView

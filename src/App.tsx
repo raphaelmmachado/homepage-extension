@@ -35,6 +35,7 @@ function App() {
   const { visibleWidgets, toggleWidget } = useWidgets();
 
   const {
+    containers,
     activeContainers,
     archivedContainers,
     setContainers,
@@ -99,16 +100,22 @@ function App() {
   const [isWidgetsManagerOpen, setIsWidgetsManagerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredBookmarks = searchTerm
-    ? bookmarks.filter(
-        (b) =>
-          (b.name || b.title || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          (b.description || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()),
-      )
+  const normalize = (str: string) =>
+    str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const normalizedSearch = normalize(searchTerm);
+
+  const filteredBookmarks = normalizedSearch
+    ? bookmarks.filter((b) => {
+        const titleMatch = normalize(b.name || b.title || "").includes(normalizedSearch);
+        const descMatch = normalize(b.description || "").includes(normalizedSearch);
+        const urlMatch = normalize(b.url || "").includes(normalizedSearch);
+        return titleMatch || descMatch || urlMatch;
+      })
     : [];
 
   const manualTopSites = bookmarks.filter((b) => b.containerId === "top-sites");
@@ -144,7 +151,9 @@ function App() {
 
       <SearchResults
         searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
         filteredBookmarks={filteredBookmarks}
+        containers={containers}
         searchResultsRef={searchResultsRef}
         handleSearchResultsKeyDown={handleSearchResultsKeyDown}
         openEditBookmark={openEditBookmark}
