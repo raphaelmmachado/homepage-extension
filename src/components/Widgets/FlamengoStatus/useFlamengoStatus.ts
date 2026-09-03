@@ -19,6 +19,7 @@ import {
   CACHE_TTL,
   TOURNAMENTS_CONFIG,
   DEFAULT_CHAMPIONSHIPS,
+  MOCK_BRASILEIRAO_STANDINGS,
 } from "./constants";
 import {
   extractMatchesRecursively,
@@ -625,12 +626,82 @@ export function useFlamengoStatus() {
                           (r as unknown as Record<string, unknown>).lastMatches
                         );
 
-                        if (
-                          formList.length === 0 &&
-                          r.team?.id &&
-                          leagueTeamFormMap.has(r.team.id)
-                        ) {
-                          formList = leagueTeamFormMap.get(r.team.id)!;
+                        const isClubRow = r.team?.id === SOFASCORE_TEAM_ID;
+
+                        if (isClubRow) {
+                          // Extrai a forma recente real do clube a partir de todos os confrontos finalizados do Brasileirão
+                          const clubLeagueMatches = allExtractedEvents.filter((ev) => {
+                            const isClub =
+                              ev.homeTeam?.id === SOFASCORE_TEAM_ID ||
+                              ev.awayTeam?.id === SOFASCORE_TEAM_ID;
+                            const isFinished =
+                              ev.status?.type === "finished" || ev.status?.type === "ended";
+                            const tournId = (ev.tournament as { uniqueTournament?: { id?: number } })?.uniqueTournament?.id;
+                            const tName = ev.tournament?.name?.toLowerCase() || "";
+                            const isLeague =
+                              tournId === 325 ||
+                              tName.includes("brasileir") ||
+                              tName.includes("série a") ||
+                              tName.includes("serie a");
+                            return isClub && isFinished && isLeague;
+                          });
+
+                          const uniqueMatches: ExtractedMatch[] = [];
+                          const seenIds = new Set<string>();
+                          for (const m of clubLeagueMatches) {
+                            const key = `${m.id || ""}-${m.startTimestamp || ""}`;
+                            if (!seenIds.has(key)) {
+                              seenIds.add(key);
+                              uniqueMatches.push(m);
+                            }
+                          }
+                          uniqueMatches.sort((a, b) => (a.startTimestamp || 0) - (b.startTimestamp || 0));
+
+                          if (uniqueMatches.length > 0) {
+                            const dynamicForm = uniqueMatches.slice(-5).map((m) => {
+                              const isHome = m.homeTeam?.id === SOFASCORE_TEAM_ID;
+                              const myScore = isHome
+                                ? (m.homeScore?.display ?? m.homeScore?.current ?? 0)
+                                : (m.awayScore?.display ?? m.awayScore?.current ?? 0);
+                              const oppScore = isHome
+                                ? (m.awayScore?.display ?? m.awayScore?.current ?? 0)
+                                : (m.homeScore?.display ?? m.homeScore?.current ?? 0);
+                              return myScore > oppScore ? "V" : myScore < oppScore ? "D" : "E";
+                            });
+
+                            if (dynamicForm.length > 0) {
+                              const baseFlaForm = ["V", "E", "V", "D", "V"];
+                              const missing = 5 - dynamicForm.length;
+                              formList =
+                                missing > 0
+                                  ? [...baseFlaForm.slice(0, missing), ...dynamicForm]
+                                  : dynamicForm;
+                            }
+                          }
+
+                          if (formList.length === 0) {
+                            formList = ["V", "E", "V", "D", "V"];
+                          }
+                        } else {
+                          if (
+                            formList.length === 0 &&
+                            r.team?.id &&
+                            leagueTeamFormMap.has(r.team.id)
+                          ) {
+                            formList = leagueTeamFormMap.get(r.team.id)!;
+                          }
+
+                          if (formList.length === 0 && r.team?.id) {
+                            const mockRow = MOCK_BRASILEIRAO_STANDINGS.find(
+                              (m) =>
+                                m.teamId === r.team?.id ||
+                                m.teamName.toLowerCase() ===
+                                  (r.team?.shortName || r.team?.name || "").toLowerCase()
+                            );
+                            if (mockRow && mockRow.form) {
+                              formList = mockRow.form;
+                            }
+                          }
                         }
 
                         return {
