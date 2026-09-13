@@ -606,6 +606,55 @@ export function evaluateKnockoutStatus(
   }
 }
 
+export interface ScheduleCheckpoint {
+  hour: number;
+  minute: number;
+}
+
+// Checkpoints de atualização programada por dia da semana (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
+// Domingo: 13:00, 18:00, 20:30, 23:00
+// Segunda: 13:00, 20:30
+// Terça: 20:30, 23:00
+// Quarta: 20:30, 23:00
+// Quinta: 20:30, 23:00
+// Sexta: 20:30, 23:00
+// Sábado: 18:00, 20:30, 23:00
+export const MATCH_UPDATE_SCHEDULE: Record<number, ScheduleCheckpoint[]> = {
+  0: [{ hour: 13, minute: 0 }, { hour: 18, minute: 0 }, { hour: 20, minute: 30 }, { hour: 23, minute: 0 }],
+  1: [{ hour: 13, minute: 0 }, { hour: 20, minute: 30 }],
+  2: [{ hour: 20, minute: 30 }, { hour: 23, minute: 0 }],
+  3: [{ hour: 20, minute: 30 }, { hour: 23, minute: 0 }],
+  4: [{ hour: 20, minute: 30 }, { hour: 23, minute: 0 }],
+  5: [{ hour: 20, minute: 30 }, { hour: 23, minute: 0 }],
+  6: [{ hour: 18, minute: 0 }, { hour: 20, minute: 30 }, { hour: 23, minute: 0 }],
+};
+
+export function getNextScheduledUpdate(fromTime = Date.now()): Date {
+  const from = new Date(fromTime);
+  for (let dayOffset = 0; dayOffset < 8; dayOffset++) {
+    const candidateDate = new Date(from);
+    candidateDate.setDate(from.getDate() + dayOffset);
+    const dayOfWeek = candidateDate.getDay();
+    const checkpoints = MATCH_UPDATE_SCHEDULE[dayOfWeek] || [];
+
+    for (const cp of checkpoints) {
+      candidateDate.setHours(cp.hour, cp.minute, 0, 0);
+      if (candidateDate.getTime() > fromTime) {
+        return candidateDate;
+      }
+    }
+  }
+  return new Date(fromTime + 2 * 60 * 60 * 1000);
+}
+
+export function hasPassedScheduledUpdate(cachedTimestamp?: number, now = Date.now()): boolean {
+  if (!cachedTimestamp || cachedTimestamp > now) return true;
+  if (now - cachedTimestamp >= 24 * 60 * 60 * 1000) return true;
+
+  const nextAfterCache = getNextScheduledUpdate(cachedTimestamp);
+  return now >= nextAfterCache.getTime();
+}
+
 export function getInitialCachedData(): {
   match: NextMatch;
   previousMatch: MatchSummary | null;
@@ -634,8 +683,9 @@ export function getInitialCachedData(): {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      const ttl = parsed.ttl || CACHE_TTL;
-      const isStale = Date.now() - (parsed.timestamp || 0) >= ttl;
+      const isStale = parsed.ttl
+        ? Date.now() - (parsed.timestamp || 0) >= parsed.ttl
+        : hasPassedScheduledUpdate(parsed.timestamp, Date.now());
 
       const cachedChamps: Championship[] = Array.isArray(parsed.championships)
         ? parsed.championships

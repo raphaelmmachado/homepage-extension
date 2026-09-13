@@ -206,8 +206,8 @@ export const DEFAULT_FOLLOWING_MATCH: MatchSummary = DEFAULT_FOLLOWING_MATCHES[0
 
 export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
 export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
-export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-2h-v1`;
-export const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 horas de cache
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-matchschedule-v1`;
+export const CACHE_TTL = 2 * 60 * 60 * 1000; // Fallback TTL de 2 horas
 
 export const MOCK_BRASILEIRAO_STANDINGS = [
   { position: 1, teamId: 1958, teamName: "Botafogo", points: 47, matches: 24, wins: 14, draws: 5, losses: 5, goalDiff: 17, form: ["V", "V", "E", "V", "D"], isFlamengo: ACTIVE_CLUB.id === 1958 },

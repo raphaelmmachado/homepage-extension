@@ -32,6 +32,8 @@ import {
   getKnownStadium,
   detectPhaseType,
   normalizeString,
+  getNextScheduledUpdate,
+  hasPassedScheduledUpdate,
 } from "./utils";
 import { SportsDataClient } from "../../../services/SportsDataClient";
 import { ACTIVE_CLUB } from "./clubConfig";
@@ -88,8 +90,11 @@ export function useFlamengoStatus() {
         try {
           const parsed = JSON.parse(cached);
           const now = Date.now();
-          const ttl = parsed.ttl || CACHE_TTL;
-          if (now - parsed.timestamp < ttl) {
+          const isStale = parsed.ttl
+            ? now - parsed.timestamp >= parsed.ttl
+            : hasPassedScheduledUpdate(parsed.timestamp, now);
+
+          if (!isStale) {
             if (parsed.match && isValidMatchDate(parsed.match)) {
               setNextMatch(parsed.match);
             }
@@ -1036,9 +1041,7 @@ export function useFlamengoStatus() {
         setLastUpdated(now);
 
         const isGameLive = fetchedMatch.isLive;
-        const effectiveTtl = isGameLive
-          ? 60 * 1000 // 1 minuto
-          : CACHE_TTL; // 2 horas
+        const effectiveTtl = isGameLive ? 60 * 1000 : undefined;
 
         localStorage.setItem(
           CACHE_KEY,
@@ -1063,10 +1066,25 @@ export function useFlamengoStatus() {
 
   useEffect(() => {
     fetchSofascoreData();
-    const interval = setInterval(() => {
-      fetchSofascoreData(true);
-    }, CACHE_TTL);
-    return () => clearInterval(interval);
+
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNext = () => {
+      const now = Date.now();
+      const nextDate = getNextScheduledUpdate(now);
+      const delayMs = Math.max(1000, nextDate.getTime() - now);
+
+      timerId = setTimeout(() => {
+        fetchSofascoreData(true);
+        scheduleNext();
+      }, delayMs);
+    };
+
+    scheduleNext();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, []);
 
   const activeChamp: Championship =
