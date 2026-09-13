@@ -1038,7 +1038,7 @@ export function useFlamengoStatus() {
         const isGameLive = fetchedMatch.isLive;
         const effectiveTtl = isGameLive
           ? 60 * 1000 // 1 minuto
-          : CACHE_TTL; // 24 horas
+          : CACHE_TTL; // 2 horas
 
         localStorage.setItem(
           CACHE_KEY,
@@ -1063,6 +1063,10 @@ export function useFlamengoStatus() {
 
   useEffect(() => {
     fetchSofascoreData();
+    const interval = setInterval(() => {
+      fetchSofascoreData(true);
+    }, CACHE_TTL);
+    return () => clearInterval(interval);
   }, []);
 
   const activeChamp: Championship =

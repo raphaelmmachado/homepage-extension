@@ -579,7 +579,7 @@ export function FlamengoStatus() {
             hour: "2-digit",
             minute: "2-digit",
           })}{" "}
-          • Atualização automática a cada 24h
+          • Atualização automática a cada 2h
         </div>
       )}
     </div>
