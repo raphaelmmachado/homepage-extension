@@ -15,7 +15,7 @@ type Props = {
   setActiveSearchEngine: (engine: SearchEngineKey) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  handleSearchSubmit: (e: React.FormEvent) => void;
+  handleSearchSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   handleSearchButtonMouseDown: (e: React.MouseEvent) => void;
   handleSearchBarKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
@@ -52,7 +52,10 @@ export function Header({
   const engine = searchEngines[activeSearchEngine];
 
   return (
-    <nav id="barra" className="sticky top-0 z-30 py-4 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-sm">
+    <nav
+      id="barra"
+      className="sticky top-0 z-30 py-4 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-sm"
+    >
       <div className="mx-auto flex justify-center gap-4 px-4 max-w-7xl">
         <button
           onClick={toggleTheme}

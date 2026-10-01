@@ -167,7 +167,7 @@ export function useFlamengoStatus() {
           opponent: oppTeam?.shortName || oppTeam?.name || "Adversário",
           opponentId: oppTeam?.id,
           opponentLogo: oppTeam?.id
-            ? `https://api.sofascore.app/api/v1/team/${oppTeam.id}/image`
+            ? `https://api.sofascore.app/api/v1/team/${oppTeam.id}/image/thumbnail`
             : undefined,
           isHome,
           homeTeamName:
@@ -181,10 +181,10 @@ export function useFlamengoStatus() {
           homeTeamId: event.homeTeam?.id,
           awayTeamId: event.awayTeam?.id,
           homeTeamLogo: event.homeTeam?.id
-            ? `https://api.sofascore.app/api/v1/team/${event.homeTeam.id}/image`
+            ? `https://api.sofascore.app/api/v1/team/${event.homeTeam.id}/image/thumbnail`
             : undefined,
           awayTeamLogo: event.awayTeam?.id
-            ? `https://api.sofascore.app/api/v1/team/${event.awayTeam.id}/image`
+            ? `https://api.sofascore.app/api/v1/team/${event.awayTeam.id}/image/thumbnail`
             : undefined,
           date: dateStr,
           weekday: weekdayStr,
@@ -220,10 +220,10 @@ export function useFlamengoStatus() {
       try {
         const [nextRes, lastRes] = await Promise.all([
           fetch(
-            `https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/next/0`,
+            `https://api.sofascore.app/api/v1/team/${SOFASCORE_TEAM_ID}/events/next/0`,
           ),
           fetch(
-            `https://api.sofascore.com/api/v1/team/${SOFASCORE_TEAM_ID}/events/last/0`,
+            `https://api.sofascore.app/api/v1/team/${SOFASCORE_TEAM_ID}/events/last/0`,
           ),
         ]);
 
@@ -252,7 +252,7 @@ export function useFlamengoStatus() {
 
           try {
             const seasonsRes = await fetch(
-              `https://api.sofascore.com/api/v1/unique-tournament/${tourn.id}/seasons`,
+              `https://api.sofascore.app/api/v1/unique-tournament/${tourn.id}/seasons`,
             );
 
             if (!seasonsRes.ok) {
@@ -311,7 +311,7 @@ export function useFlamengoStatus() {
                 for (const s of seasons.slice(0, 3)) {
                   try {
                     const cupRes = await fetch(
-                      `https://api.sofascore.com/api/v1/unique-tournament/${tourn.id}/season/${s.id}/cuptrees`,
+                      `https://api.sofascore.app/api/v1/unique-tournament/${tourn.id}/season/${s.id}/cuptrees`,
                     );
                     if (cupRes.ok) {
                       const cupData = await cupRes.json();
@@ -335,7 +335,7 @@ export function useFlamengoStatus() {
                     if (allExtractedCupMatches.length > 0) break;
                     try {
                       const roundsRes = await fetch(
-                        `https://api.sofascore.com/api/v1/unique-tournament/${tourn.id}/season/${s.id}/rounds`,
+                        `https://api.sofascore.app/api/v1/unique-tournament/${tourn.id}/season/${s.id}/rounds`,
                       );
                       if (roundsRes.ok) {
                         const roundsData = await roundsRes.json();
@@ -349,7 +349,7 @@ export function useFlamengoStatus() {
                           const r = rounds[i];
                           if (r?.round) {
                             const evRes = await fetch(
-                              `https://api.sofascore.com/api/v1/unique-tournament/${tourn.id}/season/${s.id}/events/round/${r.round}`,
+                              `https://api.sofascore.app/api/v1/unique-tournament/${tourn.id}/season/${s.id}/events/round/${r.round}`,
                             );
                             if (evRes.ok) {
                               const evData = await evRes.json();
@@ -524,7 +524,7 @@ export function useFlamengoStatus() {
             for (const s of seasons.slice(0, 3)) {
               try {
                 const standingsRes = await fetch(
-                  `https://api.sofascore.com/api/v1/unique-tournament/${tourn.id}/season/${s.id}/standings/total`,
+                  `https://api.sofascore.app/api/v1/unique-tournament/${tourn.id}/season/${s.id}/standings/total`,
                 );
 
                 if (standingsRes.ok) {
@@ -949,7 +949,7 @@ export function useFlamengoStatus() {
             "Adversário",
           opponentId: opponentTeam?.id,
           opponentLogo: opponentTeam?.id
-            ? `https://api.sofascore.app/api/v1/team/${opponentTeam.id}/image`
+            ? `https://api.sofascore.app/api/v1/team/${opponentTeam.id}/image/thumbnail`
             : undefined,
           isHome,
           date: dateStr,

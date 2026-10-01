@@ -73,13 +73,30 @@ interface RankingMapEntry {
 
 export function buildRankingsMap(rankingsData: unknown): Map<string, RankingMapEntry> {
   const map = new Map<string, RankingMapEntry>();
-  const data = rankingsData as { rankings?: Array<{ type?: string; weightClass?: { text?: string }; name?: string; ranks?: Array<{ current?: number; athlete?: { id?: string; displayName?: string; fullName?: string } }> }> };
+  const data = rankingsData as {
+    rankings?: Array<{
+      type?: string;
+      weightClass?: { text?: string };
+      name?: string;
+      ranks?: Array<{
+        current?: number;
+        athlete?: { id?: string; displayName?: string; fullName?: string };
+      }>;
+    }>;
+  };
   if (!data?.rankings || !Array.isArray(data.rankings)) return map;
 
   for (const cat of data.rankings) {
     const divName = cat.weightClass?.text || cat.name || "";
+    // Ignorar tabelas Peso por Peso (P4P) para não sobrescrever campeões ou posições na categoria
+    if (/pound for pound|pound-for-pound|peso por peso/i.test(divName)) {
+      continue;
+    }
     for (const r of cat.ranks || []) {
-      const isChamp = r.current === 1 && (cat.type?.includes("champion") || cat.name?.toLowerCase().includes("champion"));
+      const isChamp =
+        r.current === 1 &&
+        (cat.type?.includes("champion") ||
+          cat.name?.toLowerCase().includes("champion"));
       const rankValue = isChamp ? "C" : `#${r.current}`;
       const name = r.athlete?.displayName || r.athlete?.fullName;
       const id = r.athlete?.id;
@@ -141,50 +158,97 @@ export function parseUfcRankingsHtml(html: string): Map<string, string> {
   const rankMap = new Map<string, string>();
   if (!html) return rankMap;
 
-  // 1. Linhas de ranking na tabela do UFC:
-  const rowRegex =
-    /<tr[^>]*>[\s\S]*?views-field-weight-class-rank[^>]*>\s*(\d+)\s*<\/td>[\s\S]*?views-field-title[^>]*>\s*<a[^>]*>([^<]+)<\/a>/gi;
-  let m;
-  while ((m = rowRegex.exec(html)) !== null) {
-    const rank = m[1]?.trim();
-    const name = m[2]?.trim();
-    if (rank && name) {
-      const cleanName = name.replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
-      const rankVal = `#${rank}`;
-      const lower = cleanName.toLowerCase();
-      const norm = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      rankMap.set(lower, rankVal);
-      rankMap.set(norm, rankVal);
+  const champSet = new Set<string>();
 
-      const parts = norm.split(" ");
-      if (parts.length >= 2 && parts[0] && parts[parts.length - 1]) {
-        rankMap.set(`${parts[parts.length - 1]} ${parts[0]}`, rankVal);
-        rankMap.set(`${parts[0]} ${parts[parts.length - 1]}`, rankVal);
-      }
-      const lastName = parts[parts.length - 1];
-      if (lastName) {
-        rankMap.set(lastName, rankVal);
+  // 1. Encontrar todos os campeões em tags <h5><a ...>Nome</a></h5>
+  const h5Matches = [...html.matchAll(/<h5>\s*<a[^>]*>([^<]+)<\/a>\s*<\/h5>/gi)];
+  for (const m of h5Matches) {
+    if (m[1]) {
+      const cleanName = m[1].replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
+      champSet.add(cleanName.toLowerCase());
+      champSet.add(cleanName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    }
+  }
+
+  // 2. Encontrar campeões por imagens com sufixo _BELT
+  const beltImgMatches = [
+    ...html.matchAll(/<img[^>]+src="[^"]*\/([A-Z0-9_-]+)_BELT[^"]*"[^>]*alt="([^"]*)"/gi),
+  ];
+  for (const m of beltImgMatches) {
+    const altName = m[2]?.trim();
+    if (altName) {
+      champSet.add(altName.toLowerCase());
+      champSet.add(altName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    }
+  }
+
+  // 3. Processar cada divisão ignorando tabelas Peso por Peso (P4P)
+  const groupings = html.split(/<div class="view-grouping">/);
+  for (let i = 1; i < groupings.length; i++) {
+    const g = groupings[i];
+    if (!g) continue;
+
+    const headerMatch = g.match(/<div class="view-grouping-header">([\s\S]*?)<\/div>/);
+    const headerText = headerMatch ? headerMatch[1]?.replace(/<[^>]+>/g, " ").trim() || "" : "";
+
+    const isPoundForPound = /pound-for-pound|peso por peso|top rank/i.test(headerText);
+    if (isPoundForPound) {
+      continue; // IGNORAR P4P para não sobrescrever campeões ou posições na divisão!
+    }
+
+    // Extrair campeão da divisão se houver
+    const champInGroup = g.match(/<h5>\s*<a[^>]*>([^<]+)<\/a>\s*<\/h5>/i);
+    if (champInGroup && champInGroup[1]) {
+      const cName = champInGroup[1].replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
+      champSet.add(cName.toLowerCase());
+      champSet.add(cName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    }
+
+    // Extrair lutadores ranqueados da divisão (#1 a #15)
+    const rowRegex =
+      /<tr[^>]*>[\s\S]*?views-field-weight-class-rank[^>]*>\s*(\d+)\s*<\/td>[\s\S]*?views-field-title[^>]*>\s*<a[^>]*>([^<]+)<\/a>/gi;
+    let rMatch;
+    while ((rMatch = rowRegex.exec(g)) !== null) {
+      const rankNum = rMatch[1]?.trim();
+      const rawName = rMatch[2]?.trim();
+      if (rankNum && rawName) {
+        const cleanName = rawName.replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
+        const lower = cleanName.toLowerCase();
+        const norm = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        // Se este lutador for campeão, não sobrescrever com ranking numérico
+        if (champSet.has(lower) || champSet.has(norm)) {
+          continue;
+        }
+
+        const rankVal = `#${rankNum}`;
+        rankMap.set(lower, rankVal);
+        rankMap.set(norm, rankVal);
+
+        const parts = norm.split(" ");
+        if (parts.length >= 2 && parts[0] && parts[parts.length - 1]) {
+          rankMap.set(`${parts[parts.length - 1]} ${parts[0]}`, rankVal);
+          rankMap.set(`${parts[0]} ${parts[parts.length - 1]}`, rankVal);
+        }
+        const lastName = parts[parts.length - 1];
+        if (lastName && !rankMap.has(lastName)) {
+          rankMap.set(lastName, rankVal);
+        }
       }
     }
   }
 
-  // 2. Campeões de cada divisão:
-  const champRegex =
-    /<div class="views-field views-field-title">\s*<a[^>]*>([^<]+)<\/a>[\s\S]*?(?:Campeão|Champion)/gi;
-  let c;
-  while ((c = champRegex.exec(html)) !== null) {
-    const name = c[1]?.trim();
-    if (name) {
-      const cleanName = name.replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
-      const lower = cleanName.toLowerCase();
-      const norm = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      rankMap.set(lower, "C");
-      rankMap.set(norm, "C");
-      const parts = norm.split(" ");
-      const lastName = parts[parts.length - 1];
-      if (lastName) {
-        rankMap.set(lastName, "C");
-      }
+  // 4. Registrar todos os campeões com status 'C' (prioridade máxima)
+  for (const c of champSet) {
+    rankMap.set(c, "C");
+    const parts = c.split(" ");
+    if (parts.length >= 2 && parts[0] && parts[parts.length - 1]) {
+      rankMap.set(`${parts[parts.length - 1]} ${parts[0]}`, "C");
+      rankMap.set(`${parts[0]} ${parts[parts.length - 1]}`, "C");
+    }
+    const lastName = parts[parts.length - 1];
+    if (lastName) {
+      rankMap.set(lastName, "C");
     }
   }
 

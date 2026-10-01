@@ -69,7 +69,9 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
         }
       } catch (err) {
         if (isMounted) {
-          setError((err as Error).message || "Não foi possível carregar os detalhes.");
+          setError(
+            (err as Error).message || "Não foi possível carregar os detalhes.",
+          );
         }
       } finally {
         if (isMounted) {
@@ -98,7 +100,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
           <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2 truncate pr-2">
             <svg
-              className="w-5 h-5 text-blue-500 flex-shrink-0"
+              className="w-5 h-5 text-blue-500 shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -139,7 +141,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
           {loading ? (
             /* Skeleton Loader Coerente */
             <div className="flex flex-col sm:flex-row gap-5 animate-pulse">
-              <div className="w-36 h-52 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 mx-auto sm:mx-0"></div>
+              <div className="w-36 h-52 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0 mx-auto sm:mx-0"></div>
               <div className="flex-1 flex flex-col gap-2.5">
                 <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
                 <div className="flex gap-2">
@@ -183,7 +185,7 @@ export function StreamDetailsModal({ item, onClose }: StreamDetailsModalProps) {
                 /* Informações e Sinopse */
                 <div className="flex flex-col sm:flex-row gap-5">
                   {/* Poster */}
-                  <div className="w-36 flex-shrink-0 mx-auto sm:mx-0">
+                  <div className="w-36 shrink-0 mx-auto sm:mx-0">
                     <img
                       src={details.posterUrl || item.image}
                       alt={details.title}

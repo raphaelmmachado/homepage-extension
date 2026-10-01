@@ -6,7 +6,7 @@ export { ACTIVE_CLUB };
 export const DEFAULT_MOCK_MATCH: NextMatch = {
   opponent: "Remo",
   opponentId: 2004,
-  opponentLogo: "https://api.sofascore.app/api/v1/team/2004/image",
+  opponentLogo: "https://api.sofascore.app/api/v1/team/2004/image/thumbnail",
   date: "05/09",
   weekday: "Sáb",
   time: "18:30",
@@ -27,7 +27,7 @@ export const DEFAULT_PREVIOUS_MATCHES: MatchSummary[] = [
     id: 1,
     opponent: "Botafogo",
     opponentId: 1958,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/1958/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/1958/image/thumbnail",
     isHome: true,
     homeTeamName: ACTIVE_CLUB.name,
     awayTeamName: "Botafogo",
@@ -50,7 +50,7 @@ export const DEFAULT_PREVIOUS_MATCHES: MatchSummary[] = [
     id: 2,
     opponent: "Cruzeiro",
     opponentId: 1954,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/1954/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/1954/image/thumbnail",
     isHome: false,
     homeTeamName: "Cruzeiro",
     awayTeamName: ACTIVE_CLUB.name,
@@ -73,7 +73,7 @@ export const DEFAULT_PREVIOUS_MATCHES: MatchSummary[] = [
     id: 3,
     opponent: "Cruzeiro",
     opponentId: 1954,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/1954/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/1954/image/thumbnail",
     isHome: true,
     homeTeamName: ACTIVE_CLUB.name,
     awayTeamName: "Cruzeiro",
@@ -96,7 +96,7 @@ export const DEFAULT_PREVIOUS_MATCHES: MatchSummary[] = [
     id: 4,
     opponent: "Mirassol",
     opponentId: 23640,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/23640/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/23640/image/thumbnail",
     isHome: false,
     homeTeamName: "Mirassol",
     awayTeamName: ACTIVE_CLUB.name,
@@ -124,7 +124,7 @@ export const DEFAULT_FOLLOWING_MATCHES: MatchSummary[] = [
     id: 11,
     opponent: "Independiente del Valle",
     opponentId: 35084,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/35084/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/35084/image/thumbnail",
     isHome: false,
     homeTeamName: "Ind. del Valle",
     awayTeamName: ACTIVE_CLUB.name,
@@ -144,7 +144,7 @@ export const DEFAULT_FOLLOWING_MATCHES: MatchSummary[] = [
     id: 12,
     opponent: "Athletico Paranaense",
     opponentId: 1962,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/1962/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/1962/image/thumbnail",
     isHome: true,
     homeTeamName: ACTIVE_CLUB.name,
     awayTeamName: "Athletico-PR",
@@ -164,7 +164,7 @@ export const DEFAULT_FOLLOWING_MATCHES: MatchSummary[] = [
     id: 13,
     opponent: "Independiente del Valle",
     opponentId: 35084,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/35084/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/35084/image/thumbnail",
     isHome: true,
     homeTeamName: ACTIVE_CLUB.name,
     awayTeamName: "Ind. del Valle",
@@ -184,7 +184,7 @@ export const DEFAULT_FOLLOWING_MATCHES: MatchSummary[] = [
     id: 14,
     opponent: "Corinthians",
     opponentId: 1955,
-    opponentLogo: "https://api.sofascore.app/api/v1/team/1955/image",
+    opponentLogo: "https://api.sofascore.app/api/v1/team/1955/image/thumbnail",
     isHome: false,
     homeTeamName: "Corinthians",
     awayTeamName: ACTIVE_CLUB.name,
@@ -206,7 +206,7 @@ export const DEFAULT_FOLLOWING_MATCH: MatchSummary = DEFAULT_FOLLOWING_MATCHES[0
 
 export const SOFASCORE_TEAM_ID = ACTIVE_CLUB.id;
 export const FLAMENGO_LOGO_URL = ACTIVE_CLUB.badgeUrl;
-export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-matchschedule-v1`;
+export const CACHE_KEY = `my-homepage-${ACTIVE_CLUB.slug}-sofascore-v2026-appfix-v2`;
 export const CACHE_TTL = 2 * 60 * 60 * 1000; // Fallback TTL de 2 horas
 
 export const MOCK_BRASILEIRAO_STANDINGS = [

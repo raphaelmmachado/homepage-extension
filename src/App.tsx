@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { lazy, Suspense, useState, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { CustomDialog } from "./components/CustomDialog";
 
@@ -8,11 +8,28 @@ import { TopSites } from "./components/TopSites";
 import { SearchResults } from "./components/SearchResults";
 import { Header } from "./components/Header";
 import { ArchivedSection } from "./components/ArchivedSection";
-import { TrendingStreams } from "./components/Widgets/TrendingStreams";
-import { FlamengoStatus } from "./components/Widgets/FlamengoStatus";
-import { UfcStatus } from "./components/Widgets/UfcStatus";
-import { WidgetsManager } from "./components/Widgets/WidgetsManager";
 import * as svgs from "./svgs";
+
+const TrendingStreams = lazy(() =>
+  import("./components/Widgets/TrendingStreams").then(({ TrendingStreams }) => ({
+    default: TrendingStreams,
+  })),
+);
+const FlamengoStatus = lazy(() =>
+  import("./components/Widgets/FlamengoStatus").then(({ FlamengoStatus }) => ({
+    default: FlamengoStatus,
+  })),
+);
+const UfcStatus = lazy(() =>
+  import("./components/Widgets/UfcStatus").then(({ UfcStatus }) => ({
+    default: UfcStatus,
+  })),
+);
+const WidgetsManager = lazy(() =>
+  import("./components/Widgets/WidgetsManager").then(({ WidgetsManager }) => ({
+    default: WidgetsManager,
+  })),
+);
 
 import { useDialog } from "./hooks/useDialog";
 import { useSettings } from "./hooks/useSettings";
@@ -111,8 +128,12 @@ function App() {
 
   const filteredBookmarks = normalizedSearch
     ? bookmarks.filter((b) => {
-        const titleMatch = normalize(b.name || b.title || "").includes(normalizedSearch);
-        const descMatch = normalize(b.description || "").includes(normalizedSearch);
+        const titleMatch = normalize(b.name || b.title || "").includes(
+          normalizedSearch,
+        );
+        const descMatch = normalize(b.description || "").includes(
+          normalizedSearch,
+        );
         const urlMatch = normalize(b.url || "").includes(normalizedSearch);
         return titleMatch || descMatch || urlMatch;
       })
@@ -162,7 +183,7 @@ function App() {
 
       {!searchTerm && (
         <DragDropContext onDragEnd={onDragEnd}>
-          <section className="container mx-auto p-4 md:p-8 max-w-7xl flex-grow">
+          <section className="container mx-auto p-4 md:p-8 max-w-7xl grow">
             {/* 1. Top Sites / Mais Acessados */}
             <TopSites
               automaticTopSites={automaticTopSites}
@@ -202,7 +223,9 @@ function App() {
                     onDragStart={(e) => handleDragStart(container.id, false, e)}
                     onDragOver={(e) => handleDragOver(container.id, e)}
                     onDragLeave={(e) => handleDragLeave(container.id, e)}
-                    onDrop={(e) => handleDropOnContainer(container.id, false, e)}
+                    onDrop={(e) =>
+                      handleDropOnContainer(container.id, false, e)
+                    }
                     isDragging={draggedContainer?.id === container.id}
                     isDragOver={dragOverContainerId === container.id}
                   />
@@ -267,9 +290,11 @@ function App() {
             />
 
             {/* 4. Widgets no fim da página */}
-            {visibleWidgets.includes("flamengo-status") && <FlamengoStatus />}
-            {visibleWidgets.includes("ufc-upcoming") && <UfcStatus />}
-            {visibleWidgets.includes("trending-streams") && <TrendingStreams />}
+            <Suspense fallback={null}>
+              {visibleWidgets.includes("flamengo-status") && <FlamengoStatus />}
+              {visibleWidgets.includes("ufc-upcoming") && <UfcStatus />}
+              {visibleWidgets.includes("trending-streams") && <TrendingStreams />}
+            </Suspense>
           </section>
         </DragDropContext>
       )}
@@ -284,12 +309,16 @@ function App() {
         onClose={() => setIsBookmarkDialogOpen(false)}
       />
 
-      <WidgetsManager
-        isOpen={isWidgetsManagerOpen}
-        onClose={() => setIsWidgetsManagerOpen(false)}
-        visibleWidgets={visibleWidgets}
-        toggleWidget={toggleWidget}
-      />
+      {isWidgetsManagerOpen && (
+        <Suspense fallback={null}>
+          <WidgetsManager
+            isOpen={isWidgetsManagerOpen}
+            onClose={() => setIsWidgetsManagerOpen(false)}
+            visibleWidgets={visibleWidgets}
+            toggleWidget={toggleWidget}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -5,11 +5,11 @@ import type { SearchEngineKey } from "../searchEngines";
 export function useSearch(
   activeSearchEngine: SearchEngineKey,
   setActiveSearchEngine: (engine: SearchEngineKey) => void,
-  isBookmarkDialogOpen: boolean
+  isBookmarkDialogOpen: boolean,
 ) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isEngineOptionsOpen, setIsEngineOptionsOpen] = useState(false);
-  
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchResultsRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +40,10 @@ export function useSearch(
         e.preventDefault();
         requestAnimationFrame(() => {
           if (searchResultsRef.current) {
-            const firstFocusable = searchResultsRef.current.querySelector<HTMLElement>(
-              "a:not([tabindex='-1']), button:not([tabindex='-1'])",
-            );
+            const firstFocusable =
+              searchResultsRef.current.querySelector<HTMLElement>(
+                "a:not([tabindex='-1']), button:not([tabindex='-1'])",
+              );
             if (firstFocusable) {
               firstFocusable.focus();
             }
@@ -72,9 +73,7 @@ export function useSearch(
           "a:not([tabindex='-1']), button:not([tabindex='-1'])",
         ) || [],
       );
-      const currentIndex = items.indexOf(
-        document.activeElement as HTMLElement,
-      );
+      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
 
       if (e.key === "ArrowUp" && currentIndex <= 0) {
         // Voltar o foco para a barra de pesquisa
@@ -96,10 +95,11 @@ export function useSearch(
     }
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const query = searchTerm.trim();
     if (!query) return;
+    setSearchTerm("");
 
     // 0. Comandos de rolagem direta para seções
     const normalized = query
@@ -135,32 +135,53 @@ export function useSearch(
 
     // 1. Bangs / Prefixos de busca
     if (query.startsWith("!yt ")) {
-      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query.slice(4).trim())}`, "_blank");
+      window.open(
+        `https://www.youtube.com/results?search_query=${encodeURIComponent(query.slice(4).trim())}`,
+        "_blank",
+      );
       return;
     }
     if (query.startsWith("!g ")) {
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(query.slice(3).trim())}`, "_blank");
+      window.open(
+        `https://www.google.com/search?q=${encodeURIComponent(query.slice(3).trim())}`,
+        "_blank",
+      );
       return;
     }
     if (query.startsWith("!b ") || query.startsWith("!brave ")) {
       const q = query.replace(/^!(b|brave)\s+/, "").trim();
-      window.open(`https://search.brave.com/search?q=${encodeURIComponent(q)}`, "_blank");
+      window.open(
+        `https://search.brave.com/search?q=${encodeURIComponent(q)}`,
+        "_blank",
+      );
       return;
     }
     if (query.startsWith("!ai ")) {
-      window.open(`https://search.brave.com/ask?q=${encodeURIComponent(query.slice(4).trim())}`, "_blank");
+      window.open(
+        `https://search.brave.com/ask?q=${encodeURIComponent(query.slice(4).trim())}`,
+        "_blank",
+      );
       return;
     }
     if (query.startsWith("!t ")) {
-      window.open(`https://translate.google.com.br/?sl=auto&tl=pt&text=${encodeURIComponent(query.slice(3).trim())}&op=translate`, "_blank");
+      window.open(
+        `https://translate.google.com.br/?sl=auto&tl=pt&text=${encodeURIComponent(query.slice(3).trim())}&op=translate`,
+        "_blank",
+      );
       return;
     }
     if (query.startsWith("!ddg ")) {
-      window.open(`https://duckduckgo.com/?q=${encodeURIComponent(query.slice(5).trim())}`, "_blank");
+      window.open(
+        `https://duckduckgo.com/?q=${encodeURIComponent(query.slice(5).trim())}`,
+        "_blank",
+      );
       return;
     }
     if (query.startsWith("!dicio ")) {
-      window.open(`https://www.dicio.com.br/${encodeURIComponent(query.slice(7).trim())}`, "_blank");
+      window.open(
+        `https://www.dicio.com.br/${encodeURIComponent(query.slice(7).trim())}`,
+        "_blank",
+      );
       return;
     }
 
@@ -210,6 +231,7 @@ export function useSearch(
         const engine = searchEngines[activeSearchEngine];
         const fixedQuery = encodeURIComponent(query).replace(/%20/g, "+");
         window.open(`${engine.url}${fixedQuery}`, "_blank");
+        setSearchTerm("");
       }
     }
   };

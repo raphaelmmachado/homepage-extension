@@ -43,8 +43,8 @@ export function StreamFilters({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 mb-4">
         {/* Título e Provedores */}
         <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-9 h-9 bg-gray-900 dark:bg-gray-700 text-white rounded-xl flex items-center justify-center shadow-xs flex-shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-9 h-9 bg-gray-900 dark:bg-gray-700 text-white rounded-xl flex items-center justify-center shadow-xs shrink-0">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-4.5 h-4.5 text-gray-100"
