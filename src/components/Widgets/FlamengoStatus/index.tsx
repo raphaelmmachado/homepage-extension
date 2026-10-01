@@ -235,7 +235,7 @@ export function FlamengoStatus() {
                         <div className="flex items-center gap-1.5 text-xs sm:text-sm truncate">
                           {match.homeTeamId && (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${match.homeTeamId}/image/thumbnail`}
+                              src={`https://api.sofascore.app/api/v1/team/${match.homeTeamId}/image`}
                               alt=""
                               className="w-4 h-4 object-contain shrink-0"
                               onError={(e) => {
@@ -250,7 +250,7 @@ export function FlamengoStatus() {
                           <span className="text-gray-400 text-xs">x</span>
                           {match.awayTeamId && (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${match.awayTeamId}/image/thumbnail`}
+                              src={`https://api.sofascore.app/api/v1/team/${match.awayTeamId}/image`}
                               alt=""
                               className="w-4 h-4 object-contain shrink-0"
                               onError={(e) => {
@@ -312,7 +312,7 @@ export function FlamengoStatus() {
                           <div className="flex items-center gap-1.5">
                             {row.teamId && (
                               <img
-                                src={`https://api.sofascore.app/api/v1/team/${row.teamId}/image/thumbnail`}
+                                src={`https://api.sofascore.app/api/v1/team/${row.teamId}/image`}
                                 alt=""
                                 className="w-3.5 h-3.5 object-contain shrink-0"
                                 onError={(e) => {

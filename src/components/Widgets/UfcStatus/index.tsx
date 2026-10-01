@@ -139,14 +139,11 @@ export function UfcStatus() {
   });
 
   return (
-    <div
-      id="ufc"
-      className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative"
-    >
+    <div id="ufc" className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md transition-all mb-6 relative">
       {/* Header do Widget */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-gray-100 dark:border-gray-700/60 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-900 dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm p-1.5 shrink-0">
+          <div className="w-10 h-10 bg-gray-900 dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm p-1.5 flex-shrink-0">
             <img
               src={UFC_LOGO_URL}
               alt="UFC"
@@ -397,7 +394,7 @@ function MainFightHighlightCard({
         <FighterHighlightProfile fighter={match.fighter1} corner="red" />
 
         {/* Separador Central: VS */}
-        <div className="flex flex-col items-center justify-center shrink-0 px-1">
+        <div className="flex flex-col items-center justify-center flex-shrink-0 px-1">
           <div className="w-8 h-8 rounded-full bg-gray-200/80 dark:bg-gray-800 flex items-center justify-center">
             <span className="text-xs font-black text-gray-500 dark:text-gray-400 tracking-wider">
               VS
@@ -536,7 +533,7 @@ function FightCardRow({ fight }: { fight: FightMatch }) {
       </div>
 
       {/* Centro: Categoria e VS */}
-      <div className="flex flex-col items-center px-1 text-center shrink-0 max-w-[100px]">
+      <div className="flex flex-col items-center px-1 text-center flex-shrink-0 max-w-[100px]">
         <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">
           vs
         </span>
@@ -605,7 +602,7 @@ function FighterMiniAvatar({
 
   return (
     <div
-      className={`w-9 h-9 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center border-2 ${
+      className={`w-9 h-9 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center border-2 ${
         corner === "red"
           ? "border-red-500/40 dark:border-red-500/50"
           : "border-blue-500/40 dark:border-blue-500/50"

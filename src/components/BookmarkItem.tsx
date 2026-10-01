@@ -65,7 +65,7 @@ export function BookmarkItem({
           //     window.open(bookmark.url, "_blank");
           //   }
           // }}
-          className="flex items-center grow"
+          className="flex items-center flex-grow"
           title={bookmark.description || ""}
         >
           <img
@@ -76,7 +76,7 @@ export function BookmarkItem({
             alt={bookmark.name || bookmark.title}
             className="w-6 h-6 object-contain mr-3 rounded"
           />
-          <span className="grow text-sm text-gray-700 dark:text-gray-300 break-words">
+          <span className="flex-grow text-sm text-gray-700 dark:text-gray-300 break-words">
             {bookmark.name || bookmark.title}
           </span>
         </a>

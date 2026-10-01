@@ -1,6 +1,6 @@
 import type { UfcEvent } from "./types";
 
-export const CACHE_KEY = "my-homepage-ufc-events-v4";
+export const CACHE_KEY = "my-homepage-ufc-events-v3";
 export const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
 export const UFC_LOGO_URL = "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png";

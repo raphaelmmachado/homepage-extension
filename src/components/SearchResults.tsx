@@ -52,16 +52,7 @@ const sectionCommands = [
     id: "flamengo",
     title: "Flamengo Status",
     description: "Jogos e classificação",
-    keywords: [
-      "flamengo",
-      "mengo",
-      "mengao",
-      "futebol",
-      "jogos",
-      "brasileirao",
-      "libertadores",
-      "fla",
-    ],
+    keywords: ["flamengo", "mengo", "mengao", "futebol", "jogos", "brasileirao", "libertadores", "fla"],
   },
   {
     id: "ufc",
@@ -73,16 +64,7 @@ const sectionCommands = [
     id: "streams",
     title: "Filmes & Séries em Alta",
     description: "Lançamentos e tendências",
-    keywords: [
-      "streams",
-      "filmes",
-      "series",
-      "filme",
-      "serie",
-      "netflix",
-      "cinema",
-      "stream",
-    ],
+    keywords: ["streams", "filmes", "series", "filme", "serie", "netflix", "cinema", "stream"],
   },
   {
     id: "topsites",
@@ -124,14 +106,11 @@ export function SearchResults({
 
   // Comandos de seção correspondentes
   const matchingCommands = sectionCommands.filter((cmd) =>
-    cmd.keywords.some(
-      (kw) => kw.includes(normalizedQuery) || normalizedQuery.includes(kw),
-    ),
+    cmd.keywords.some((kw) => kw.includes(normalizedQuery) || normalizedQuery.includes(kw)),
   );
 
   const getContainerTitle = (containerId: string) => {
-    if (containerId === "1" || containerId === "top-sites")
-      return "Barra de Favoritos";
+    if (containerId === "1" || containerId === "top-sites") return "Barra de Favoritos";
     const found = containers.find((c) => c.id === containerId);
     return found?.title || "Pasta";
   };
@@ -148,11 +127,12 @@ export function SearchResults({
 
   return (
     <div
-      className="container mx-auto px-4 max-w-3xl grow mb-8"
+      className="container mx-auto px-4 max-w-3xl flex-grow mb-8"
       onKeyDown={handleSearchResultsKeyDown}
       ref={searchResultsRef}
     >
       <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 w-full flex flex-col gap-4">
+        
         {/* 1. SEÇÃO DE FAVORITOS ENCONTRADOS */}
         {filteredBookmarks.length > 0 && (
           <div className="flex flex-col gap-1.5">
@@ -167,12 +147,9 @@ export function SearchResults({
 
             <div className="flex flex-col gap-1">
               {filteredBookmarks.map((bookmark) => {
-                const iconSrc =
-                  bookmark.customIcon || extractFaviconFromURL(bookmark.url);
+                const iconSrc = bookmark.customIcon || extractFaviconFromURL(bookmark.url);
                 const folderName = getContainerTitle(bookmark.containerId);
-                const cleanUrl = bookmark.url
-                  .replace(/^https?:\/\/(www\.)?/, "")
-                  .replace(/\/$/, "");
+                const cleanUrl = bookmark.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
 
                 return (
                   <div
@@ -183,28 +160,21 @@ export function SearchResults({
                       href={bookmark.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => {
-                        setSearchTerm("");
-                        onClickBookmark(bookmark.url);
-                      }}
-                      className="flex items-center gap-3 grow min-w-0 pr-3 outline-none focus:outline-none"
+                      onClick={() => onClickBookmark(bookmark.url)}
+                      className="flex items-center gap-3 flex-grow min-w-0 pr-3 outline-none focus:outline-none"
                     >
                       <img
                         src={iconSrc}
                         alt={bookmark.name || bookmark.title}
                         loading="lazy"
-                        className="w-5 h-5 object-contain rounded shrink-0"
+                        className="w-5 h-5 object-contain rounded flex-shrink-0"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            extractFaviconFromURL(bookmark.url);
+                          (e.target as HTMLImageElement).src = extractFaviconFromURL(bookmark.url);
                         }}
                       />
-                      <div className="flex items-baseline gap-2 min-w-0 grow truncate">
+                      <div className="flex items-baseline gap-2 min-w-0 flex-grow truncate">
                         <span className="text-sm font-medium text-gray-800 dark:text-gray-200 group-focus-within/item:text-blue-600 dark:group-focus-within/item:text-blue-400 transition-colors truncate">
-                          <HighlightMatch
-                            text={bookmark.name || bookmark.title || ""}
-                            query={searchTerm}
-                          />
+                          <HighlightMatch text={bookmark.name || bookmark.title || ""} query={searchTerm} />
                         </span>
                         <span className="text-xs text-gray-400 dark:text-gray-500 truncate hidden sm:inline font-normal">
                           {cleanUrl}
@@ -212,7 +182,7 @@ export function SearchResults({
                       </div>
                     </a>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700/60 px-2 py-0.5 rounded-md font-medium">
                         {folderName}
                       </span>
@@ -227,9 +197,7 @@ export function SearchResults({
                         className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
                         title="Opções do favorito"
                       >
-                        <div
-                          dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }}
-                        />
+                        <div dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }} />
                       </button>
                     </div>
                   </div>
@@ -254,7 +222,7 @@ export function SearchResults({
                   className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:bg-gray-100 dark:focus:bg-gray-700/60 focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-400/40 outline-none transition-all duration-150 text-left w-full cursor-pointer group/cmd"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-gray-400 dark:text-gray-500 group-hover/cmd:text-gray-700 dark:group-hover/cmd:text-gray-300 group-focus/cmd:text-blue-600 dark:group-focus/cmd:text-blue-400 text-sm w-5 text-center shrink-0 transition-colors">
+                    <span className="text-gray-400 dark:text-gray-500 group-hover/cmd:text-gray-700 dark:group-hover/cmd:text-gray-300 group-focus/cmd:text-blue-600 dark:group-focus/cmd:text-blue-400 text-sm w-5 text-center flex-shrink-0 transition-colors">
                       ↗
                     </span>
                     <span className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover/cmd:text-blue-600 dark:group-hover/cmd:text-blue-400 group-focus/cmd:text-blue-600 dark:group-focus/cmd:text-blue-400 transition-colors truncate">
@@ -274,9 +242,7 @@ export function SearchResults({
         )}
 
         {/* 3. SEÇÃO DE PESQUISA EXTERNA NA WEB */}
-        <div
-          className={`flex flex-col gap-2 ${filteredBookmarks.length > 0 || matchingCommands.length > 0 ? "border-t border-gray-100 dark:border-gray-700/60 pt-3" : ""}`}
-        >
+        <div className={`flex flex-col gap-2 ${filteredBookmarks.length > 0 || matchingCommands.length > 0 ? "border-t border-gray-100 dark:border-gray-700/60 pt-3" : ""}`}>
           <div className="flex justify-between items-center px-1">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
               Pesquisar na Web
@@ -290,10 +256,9 @@ export function SearchResults({
                 href={`${option.url}${encodeURIComponent(searchTerm)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => setSearchTerm("")}
                 className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:bg-gray-100 dark:focus:bg-gray-700/60 focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-400/40 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:text-gray-900 dark:focus:text-white outline-none transition-all duration-150 group/link"
               >
-                <div className="w-4 h-4 flex items-center justify-center shrink-0 opacity-80 group-hover/link:opacity-100 group-focus/link:opacity-100 transition-opacity">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-80 group-hover/link:opacity-100 group-focus/link:opacity-100 transition-opacity">
                   <div dangerouslySetInnerHTML={{ __html: option.icon }} />
                 </div>
                 <span className="text-xs font-medium truncate">
@@ -303,7 +268,10 @@ export function SearchResults({
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
 }
+
+

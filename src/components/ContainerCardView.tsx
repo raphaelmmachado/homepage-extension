@@ -82,7 +82,7 @@ export function ContainerCardView({
           isOpen ? "mb-4" : "mb-0"
         }`}
       >
-        <div className="flex items-center gap-2 grow pr-16 min-w-0">
+        <div className="flex items-center gap-2 flex-grow pr-16 min-w-0">
           {isArchived && (
             <button
               type="button"
@@ -90,7 +90,7 @@ export function ContainerCardView({
                 e.stopPropagation();
                 setIsOpen((prev) => !prev);
               }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors cursor-pointer shrink-0"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors cursor-pointer flex-shrink-0"
               title={isOpen ? "Recolher favoritos" : "Mostrar favoritos"}
             >
               <div
@@ -108,7 +108,7 @@ export function ContainerCardView({
               autoFocus
               className={`${
                 isArchived ? "text-base" : "text-lg"
-              } font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 grow outline-none focus:ring-2 focus:ring-blue-500 w-full`}
+              } font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 flex-grow outline-none focus:ring-2 focus:ring-blue-500 w-full`}
               value={editingContainerTitle}
               onChange={(e) => setEditingContainerTitle(e.target.value)}
               onBlur={() => saveContainerTitle(container.id)}
@@ -216,8 +216,8 @@ export function ContainerCardView({
               {...provided.droppableProps}
               className={
                 currentLayout === "grid"
-                  ? "flex flex-wrap gap-2 min-h-[50px] grow content-start"
-                  : "flex flex-col gap-1 min-h-[50px] grow"
+                  ? "flex flex-wrap gap-2 min-h-[50px] flex-grow content-start"
+                  : "flex flex-col gap-1 min-h-[50px] flex-grow"
               }
             >
               {containerBookmarks.map((bookmark, index) => (

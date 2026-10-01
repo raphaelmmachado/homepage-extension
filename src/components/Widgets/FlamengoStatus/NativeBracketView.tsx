@@ -239,7 +239,7 @@ export const NativeBracketView: React.FC<NativeBracketViewProps> = ({
                         <div className="w-5 h-5 rounded-full bg-white dark:bg-gray-800 p-0.5 flex items-center justify-center shrink-0 shadow-2xs">
                           {m.homeTeamId ? (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image/thumbnail`}
+                              src={`https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`}
                               alt={m.homeTeam}
                               className="w-3.5 h-3.5 object-contain"
                               onError={(e) => {
@@ -289,7 +289,7 @@ export const NativeBracketView: React.FC<NativeBracketViewProps> = ({
                         <div className="w-5 h-5 rounded-full bg-white dark:bg-gray-800 p-0.5 flex items-center justify-center shrink-0 shadow-2xs">
                           {m.awayTeamId ? (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image/thumbnail`}
+                              src={`https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`}
                               alt={m.awayTeam}
                               className="w-3.5 h-3.5 object-contain"
                               onError={(e) => {

@@ -91,19 +91,19 @@ const createSearchResultsElement = (
   searchTerm = "",
   option = { url: "", icon: "", placeholder: "" },
 ) => {
-  const searchEnginesSuggestions = document.createElement("a");
-  searchEnginesSuggestions.href = `${option.url}${searchTerm}`;
+  const seachEnginesSuggestions = document.createElement("a");
+  seachEnginesSuggestions.href = `${option.url}${searchTerm}`;
   const span = `<span class="italic font-bold">${searchTerm}</span>`;
-  searchEnginesSuggestions.className = `flex items-center gap-3 my-1 p-3
+  seachEnginesSuggestions.className = `flex items-center gap-3 my-1 p-3
            rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`;
-  searchEnginesSuggestions.dataset.id = "search-option";
-  searchEnginesSuggestions.innerHTML = `
+  seachEnginesSuggestions.dataset.id = "search-option";
+  seachEnginesSuggestions.innerHTML = `
         <span class="max-w-full h-auto">${option.icon}</span>
         <span class="text-gray-700 dark:text-gray-200 truncate">
             ${option.placeholder.replace("{palavra}", span)}
         </span>
         `;
-  return searchEnginesSuggestions;
+  return seachEnginesSuggestions;
 };
 export const render = (searchTerm = "") => {
   const lowerCaseSearchTerm = searchTerm.toLowerCase();
@@ -172,12 +172,12 @@ export const render = (searchTerm = "") => {
       titleElement.textContent = `💭 Você quer`;
 
       searchOptions.forEach((option) => {
-        const searchEnginesSuggestions = createSearchResultsElement(
+        const seachEnginesSuggestions = createSearchResultsElement(
           searchTerm,
           option,
         );
 
-        resultsContainer.appendChild(searchEnginesSuggestions);
+        resultsContainer.appendChild(seachEnginesSuggestions);
       });
       searchResultsWrapper.appendChild(resultsContainer);
     }
@@ -249,7 +249,7 @@ const createContainerElement = (container, containerBookmarks) => {
   header.className = "flex justify-between items-center mb-4";
   const titleElement = document.createElement("h2");
   titleElement.className =
-    "text-xl font-bold text-gray-800 dark:text-gray-200 cursor-pointer grow";
+    "text-xl font-bold text-gray-800 dark:text-gray-200 cursor-pointer flex-grow";
   titleElement.textContent = container.title;
   titleElement.addEventListener("click", () => {
     const input = document.createElement("input");
@@ -331,13 +331,13 @@ const createBookmarkElement = (bookmark) => {
     element.innerHTML = `
                     <a target="_blank" href="${
                       bookmark.url
-                    }" rel="noopener noreferrer" class="flex items-center grow" title="${
+                    }" rel="noopener noreferrer" class="flex items-center flex-grow" title="${
                       bookmark.description || ""
                     }">
                         <img src="${faviconUrl}" alt="${
                           bookmark.title ?? bookmark.name
                         }" class="w-6 h-6 object-contain mr-3 rounded" />
-                        <span class="grow text-sm text-gray-700 dark:text-gray-300">${
+                        <span class="flex-grow text-sm text-gray-700 dark:text-gray-300">${
                           bookmark.title ?? bookmark.name
                         }</span>
                     </a>
@@ -487,7 +487,7 @@ const createArticleElement = (article) => {
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 line-clamp-2">${
           article.title
         }</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 grow">${
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 flex-grow">${
           article.description
         }</p>
         <div class="flex items-center justify-between">

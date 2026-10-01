@@ -35,38 +35,38 @@ export class SportsDataClient {
 
   static async fetchTeamData(teamId: number) {
     const [lastData, nextData] = await Promise.all([
-      this.fetch(`https://api.sofascore.app/api/v1/team/${teamId}/events/last/0`),
-      this.fetch(`https://api.sofascore.app/api/v1/team/${teamId}/events/next/0`),
+      this.fetch(`https://api.sofascore.com/api/v1/team/${teamId}/events/last/0`),
+      this.fetch(`https://api.sofascore.com/api/v1/team/${teamId}/events/next/0`),
     ]);
     return { lastData: lastData || {}, nextData: nextData || {} };
   }
 
   static async fetchEventDetails(eventId: string | number) {
-    return this.fetch(`https://api.sofascore.app/api/v1/event/${eventId}`);
+    return this.fetch(`https://api.sofascore.com/api/v1/event/${eventId}`);
   }
 
   static async fetchTournamentSeasons(tournamentId: number | string) {
-    return this.fetch(`https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/seasons`);
+    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/seasons`);
   }
 
   static async fetchSeasonEvents(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/events`);
+    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/events`);
   }
 
   static async fetchCupTrees(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/cuptrees`);
+    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/cuptrees`);
   }
 
   static async fetchTournamentRounds(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/rounds`);
+    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/rounds`);
   }
 
   static async fetchRoundEvents(tournamentId: number | string, seasonId: number | string, round: number) {
-    return this.fetch(`https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/events/round/${round}`);
+    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/events/round/${round}`);
   }
 
   static async fetchStandings(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/standings/total`);
+    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/standings/total`);
   }
 
   static async fetchUfcData(startStr: string, endStr: string) {

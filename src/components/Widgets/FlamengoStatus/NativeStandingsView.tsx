@@ -181,7 +181,7 @@ export const NativeStandingsView: React.FC<NativeStandingsViewProps> = ({
                             isFavClub
                               ? activeClub.badgeUrl
                               : row.teamId
-                                ? `https://api.sofascore.app/api/v1/team/${row.teamId}/image/thumbnail`
+                                ? `https://api.sofascore.app/api/v1/team/${row.teamId}/image`
                                 : ""
                           }
                           alt={row.teamName}

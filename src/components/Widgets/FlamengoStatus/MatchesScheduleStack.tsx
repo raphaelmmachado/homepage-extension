@@ -101,7 +101,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                       m.homeTeamId === activeClub.id
                         ? logoUrl
                         : m.homeTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image/thumbnail`
+                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`
                     }
                     alt={m.homeTeamName || "Mandante"}
                     className="w-4 h-4 object-contain"
@@ -161,7 +161,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                       m.awayTeamId === activeClub.id
                         ? logoUrl
                         : m.awayTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image/thumbnail`
+                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`
                     }
                     alt={m.awayTeamName || "Visitante"}
                     className="w-4 h-4 object-contain"
@@ -433,7 +433,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                       m.homeTeamId === activeClub.id
                         ? logoUrl
                         : m.homeTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image/thumbnail`
+                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`
                     }
                     alt={m.homeTeamName || "Mandante"}
                     className="w-4 h-4 object-contain"
@@ -485,7 +485,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                       m.awayTeamId === activeClub.id
                         ? logoUrl
                         : m.awayTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image/thumbnail`
+                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`
                     }
                     alt={m.awayTeamName || "Visitante"}
                     className="w-4 h-4 object-contain"

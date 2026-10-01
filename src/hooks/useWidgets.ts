@@ -13,7 +13,7 @@ export function useWidgets() {
     if (!saved) {
       localStorage.setItem(
         STORAGE_KEYS.VISIBLE_WIDGETS,
-        JSON.stringify(DEFAULT_WIDGETS),
+        JSON.stringify(DEFAULT_WIDGETS)
       );
       return DEFAULT_WIDGETS;
     }
@@ -21,16 +21,14 @@ export function useWidgets() {
     try {
       const parsed = JSON.parse(saved) as string[];
       // Migração única para ativar o widget do UFC para usuários existentes
-      const hasUfcMigrated = localStorage.getItem(
-        "my-homepage-ufc-migrated-v1",
-      );
+      const hasUfcMigrated = localStorage.getItem("my-homepage-ufc-migrated-v1");
       if (!hasUfcMigrated) {
         localStorage.setItem("my-homepage-ufc-migrated-v1", "true");
         if (!parsed.includes("ufc-upcoming")) {
           const updated = [...parsed, "ufc-upcoming"];
           localStorage.setItem(
             STORAGE_KEYS.VISIBLE_WIDGETS,
-            JSON.stringify(updated),
+            JSON.stringify(updated)
           );
           return updated;
         }
