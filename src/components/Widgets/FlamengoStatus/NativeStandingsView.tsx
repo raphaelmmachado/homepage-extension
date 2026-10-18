@@ -180,9 +180,10 @@ export const NativeStandingsView: React.FC<NativeStandingsViewProps> = ({
                           src={
                             isFavClub
                               ? activeClub.badgeUrl
-                              : row.teamId
-                                ? `https://api.sofascore.app/api/v1/team/${row.teamId}/image`
-                                : ""
+                              : row.teamLogo ||
+                                (row.teamId
+                                  ? `https://a.espncdn.com/i/teamlogos/soccer/500/${row.teamId}.png`
+                                  : "")
                           }
                           alt={row.teamName}
                           className="w-4.5 h-4.5 object-contain"

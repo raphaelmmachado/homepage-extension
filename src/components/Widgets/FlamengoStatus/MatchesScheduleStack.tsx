@@ -98,10 +98,10 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
                   <img
                     src={
-                      m.homeTeamId === activeClub.id
+                      m.homeTeamId === activeClub.id || m.homeTeamId === activeClub.espnId
                         ? logoUrl
                         : m.homeTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`
+                          `https://a.espncdn.com/i/teamlogos/soccer/500/${m.homeTeamId}.png`
                     }
                     alt={m.homeTeamName || "Mandante"}
                     className="w-4 h-4 object-contain"
@@ -112,7 +112,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 </div>
                 <span
                   className={`text-xs truncate font-medium ${
-                    m.homeTeamId === activeClub.id
+                    m.homeTeamId === activeClub.id || m.homeTeamId === activeClub.espnId
                       ? "font-bold text-gray-900 dark:text-white"
                       : "text-gray-700 dark:text-gray-300"
                   }`}
@@ -148,7 +148,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
               <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 text-right">
                 <span
                   className={`text-xs truncate font-medium ${
-                    m.awayTeamId === activeClub.id
+                    m.awayTeamId === activeClub.id || m.awayTeamId === activeClub.espnId
                       ? "font-bold text-gray-900 dark:text-white"
                       : "text-gray-700 dark:text-gray-300"
                   }`}
@@ -158,10 +158,10 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
                   <img
                     src={
-                      m.awayTeamId === activeClub.id
+                      m.awayTeamId === activeClub.id || m.awayTeamId === activeClub.espnId
                         ? logoUrl
                         : m.awayTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`
+                          `https://a.espncdn.com/i/teamlogos/soccer/500/${m.awayTeamId}.png`
                     }
                     alt={m.awayTeamName || "Visitante"}
                     className="w-4 h-4 object-contain"
@@ -430,10 +430,10 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
                   <img
                     src={
-                      m.homeTeamId === activeClub.id
+                      m.homeTeamId === activeClub.id || m.homeTeamId === activeClub.espnId
                         ? logoUrl
                         : m.homeTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.homeTeamId}/image`
+                          `https://a.espncdn.com/i/teamlogos/soccer/500/${m.homeTeamId}.png`
                     }
                     alt={m.homeTeamName || "Mandante"}
                     className="w-4 h-4 object-contain"
@@ -444,7 +444,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 </div>
                 <span
                   className={`text-xs truncate font-medium ${
-                    m.homeTeamId === activeClub.id
+                    m.homeTeamId === activeClub.id || m.homeTeamId === activeClub.espnId
                       ? "font-bold text-gray-900 dark:text-white"
                       : "text-gray-700 dark:text-gray-300"
                   }`}
@@ -472,7 +472,7 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
               <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 text-right">
                 <span
                   className={`text-xs truncate font-medium ${
-                    m.awayTeamId === activeClub.id
+                    m.awayTeamId === activeClub.id || m.awayTeamId === activeClub.espnId
                       ? "font-bold text-gray-900 dark:text-white"
                       : "text-gray-700 dark:text-gray-300"
                   }`}
@@ -482,10 +482,10 @@ export const MatchesScheduleStack: React.FC<MatchesScheduleStackProps> = ({
                 <div className="w-6 h-6 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-xs flex items-center justify-center shrink-0">
                   <img
                     src={
-                      m.awayTeamId === activeClub.id
+                      m.awayTeamId === activeClub.id || m.awayTeamId === activeClub.espnId
                         ? logoUrl
                         : m.awayTeamLogo ||
-                          `https://api.sofascore.app/api/v1/team/${m.awayTeamId}/image`
+                          `https://a.espncdn.com/i/teamlogos/soccer/500/${m.awayTeamId}.png`
                     }
                     alt={m.awayTeamName || "Visitante"}
                     className="w-4 h-4 object-contain"

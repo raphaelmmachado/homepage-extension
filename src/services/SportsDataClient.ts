@@ -1,4 +1,3 @@
-
 export class SportsDataClient {
   static getLocalData(key: string) {
     try {
@@ -19,7 +18,19 @@ export class SportsDataClient {
 
   static async fetch(url: string, init?: RequestInit) {
     try {
-      const res = await fetch(url, init);
+      const defaultHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+      };
+
+      const res = await fetch(url, {
+        ...init,
+        headers: {
+          ...defaultHeaders,
+          ...(init?.headers || {}),
+        },
+      });
+
       if (res.ok) {
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
@@ -33,42 +44,25 @@ export class SportsDataClient {
     return null;
   }
 
-  static async fetchTeamData(teamId: number) {
-    const [lastData, nextData] = await Promise.all([
-      this.fetch(`https://api.sofascore.com/api/v1/team/${teamId}/events/last/0`),
-      this.fetch(`https://api.sofascore.com/api/v1/team/${teamId}/events/next/0`),
-    ]);
-    return { lastData: lastData || {}, nextData: nextData || {} };
+  // --- ESPN Soccer Endpoints ---
+  static async fetchEspnStandings(league = "bra.1") {
+    return this.fetch(`https://site.web.api.espn.com/apis/v2/sports/soccer/${league}/standings`);
   }
 
-  static async fetchEventDetails(eventId: string | number) {
-    return this.fetch(`https://api.sofascore.com/api/v1/event/${eventId}`);
+  static async fetchEspnTeamSchedule(teamId: number | string, league = "bra.1", fixture = false) {
+    const fixtureParam = fixture ? "?fixture=true" : "";
+    return this.fetch(`https://site.web.api.espn.com/apis/site/v2/sports/soccer/${league}/teams/${teamId}/schedule${fixtureParam}`);
   }
 
-  static async fetchTournamentSeasons(tournamentId: number | string) {
-    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/seasons`);
+  static async fetchEspnScoreboard(league = "bra.1") {
+    return this.fetch(`https://site.web.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard`);
   }
 
-  static async fetchSeasonEvents(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/events`);
+  static async fetchEspnTeam(teamId: number | string, league = "bra.1") {
+    return this.fetch(`https://site.web.api.espn.com/apis/site/v2/sports/soccer/${league}/teams/${teamId}`);
   }
 
-  static async fetchCupTrees(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/cuptrees`);
-  }
-
-  static async fetchTournamentRounds(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/rounds`);
-  }
-
-  static async fetchRoundEvents(tournamentId: number | string, seasonId: number | string, round: number) {
-    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/events/round/${round}`);
-  }
-
-  static async fetchStandings(tournamentId: number | string, seasonId: number | string) {
-    return this.fetch(`https://api.sofascore.com/api/v1/unique-tournament/${tournamentId}/season/${seasonId}/standings/total`);
-  }
-
+  // --- UFC Endpoints ---
   static async fetchUfcData(startStr: string, endStr: string) {
     const headersJson = { "User-Agent": "Mozilla/5.0" };
     const headersHtml = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" };

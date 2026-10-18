@@ -79,6 +79,7 @@ export interface StandingsTeamRow {
   scoresAgainst?: number;
   goalDiff?: number;
   form?: string[];
+  teamLogo?: string;
   isFlamengo: boolean;
 }
 

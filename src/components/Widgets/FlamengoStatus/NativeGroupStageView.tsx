@@ -100,7 +100,7 @@ export const NativeGroupStageView: React.FC<NativeGroupStageViewProps> = ({
                         <div className="flex items-center gap-1.5">
                           {r.teamId && (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${r.teamId}/image`}
+                              src={isFav ? activeClub.badgeUrl : r.teamLogo || `https://a.espncdn.com/i/teamlogos/soccer/500/${r.teamId}.png`}
                               alt={r.teamName}
                               className="w-4 h-4 object-contain shrink-0"
                               onError={(e) => {

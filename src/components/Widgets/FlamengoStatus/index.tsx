@@ -235,7 +235,7 @@ export function FlamengoStatus() {
                         <div className="flex items-center gap-1.5 text-xs sm:text-sm truncate">
                           {match.homeTeamId && (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${match.homeTeamId}/image`}
+                              src={match.homeTeamId === activeClub.id || match.homeTeamId === activeClub.espnId ? activeClub.badgeUrl : `https://a.espncdn.com/i/teamlogos/soccer/500/${match.homeTeamId}.png`}
                               alt=""
                               className="w-4 h-4 object-contain shrink-0"
                               onError={(e) => {
@@ -250,7 +250,7 @@ export function FlamengoStatus() {
                           <span className="text-gray-400 text-xs">x</span>
                           {match.awayTeamId && (
                             <img
-                              src={`https://api.sofascore.app/api/v1/team/${match.awayTeamId}/image`}
+                              src={match.awayTeamId === activeClub.id || match.awayTeamId === activeClub.espnId ? activeClub.badgeUrl : `https://a.espncdn.com/i/teamlogos/soccer/500/${match.awayTeamId}.png`}
                               alt=""
                               className="w-4 h-4 object-contain shrink-0"
                               onError={(e) => {
@@ -312,7 +312,7 @@ export function FlamengoStatus() {
                           <div className="flex items-center gap-1.5">
                             {row.teamId && (
                               <img
-                                src={`https://api.sofascore.app/api/v1/team/${row.teamId}/image`}
+                                src={row.teamLogo || `https://a.espncdn.com/i/teamlogos/soccer/500/${row.teamId}.png`}
                                 alt=""
                                 className="w-3.5 h-3.5 object-contain shrink-0"
                                 onError={(e) => {
