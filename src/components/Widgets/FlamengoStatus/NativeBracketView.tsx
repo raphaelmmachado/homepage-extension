@@ -220,8 +220,8 @@ export const NativeBracketView: React.FC<NativeBracketViewProps> = ({
             {/* Lista de Cards de Confronto */}
             <div className="flex flex-col gap-3 justify-around h-full">
               {round.matches.map((m: BracketMatchNode) => {
-                const isHomeFav = m.homeTeamId === activeClub.id;
-                const isAwayFav = m.awayTeamId === activeClub.id;
+                const isHomeFav = m.homeTeamId === activeClub.id || m.homeTeamId === activeClub.espnId;
+                const isAwayFav = m.awayTeamId === activeClub.id || m.awayTeamId === activeClub.espnId;
                 const isFavMatch = isHomeFav || isAwayFav;
 
                 return (

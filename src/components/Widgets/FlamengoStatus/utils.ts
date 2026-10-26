@@ -1,4 +1,4 @@
-import type { NextMatch, Championship, ExtractedMatch, MatchSummary } from "./types";
+import type { NextMatch, Championship, ExtractedMatch, MatchSummary, KnockoutLeg } from "./types";
 import {
   DEFAULT_MOCK_MATCH,
   DEFAULT_PREVIOUS_MATCH,
@@ -7,7 +7,6 @@ import {
   DEFAULT_FOLLOWING_MATCHES,
   DEFAULT_CHAMPIONSHIPS,
   CACHE_KEY,
-  CACHE_TTL,
   KNOWN_STADIUMS,
   SOFASCORE_TEAM_ID,
   LFU_TEAMS,
@@ -151,9 +150,28 @@ export function isKnockoutRoundName(rawName?: string, tournamentId?: number): bo
   return false;
 }
 
+const ORDINAL_PHASE_NAMES: Record<string, string> = {
+  "first round": "1ª Fase",
+  "second round": "2ª Fase",
+  "third round": "3ª Fase",
+  "fourth round": "4ª Fase",
+  "fifth round": "5ª Fase",
+  "sixth round": "6ª Fase",
+  "seventh round": "7ª Fase",
+  "eighth round": "8ª Fase",
+};
+
 export function translatePhaseName(name?: string): string {
   if (!name) return "Fase Eliminatória";
   const lower = name.toLowerCase().trim();
+
+  // Fases numeradas por extenso (Copa do Brasil: "Fifth Round", etc.)
+  for (const [key, value] of Object.entries(ORDINAL_PHASE_NAMES)) {
+    if (lower.includes(key)) return value;
+  }
+
+  // Pontos corridos
+  if (lower.includes("regular season")) return "Pontos Corridos";
 
   // Final
   if (
@@ -604,6 +622,189 @@ export function evaluateKnockoutStatus(
       };
     }
   }
+}
+
+function isEventCompleted(ev: unknown): boolean {
+  const competition = (ev as { competitions?: Array<{ status?: { type?: { completed?: boolean } } }> })
+    ?.competitions?.[0];
+  return !!competition?.status?.type?.completed;
+}
+
+function eventPhaseName(ev: unknown): string {
+  const seasonType = (ev as { seasonType?: { name?: string } })?.seasonType;
+  return seasonType?.name || "Fase Eliminatória";
+}
+
+interface EspnCompetitor {
+  homeAway?: string;
+  score?: { displayValue?: string; value?: number };
+  team?: {
+    id?: string;
+    displayName?: string;
+    logos?: Array<{ href?: string }>;
+  };
+}
+
+function eventCompetitors(ev: unknown): {
+  home: EspnCompetitor | undefined;
+  away: EspnCompetitor | undefined;
+} {
+  const competitors =
+    (ev as { competitions?: Array<{ competitors?: EspnCompetitor[] }> })
+      ?.competitions?.[0]?.competitors || [];
+  return {
+    home: competitors.find((c) => c.homeAway === "home"),
+    away: competitors.find((c) => c.homeAway === "away"),
+  };
+}
+
+/**
+ * Monta os dados da fase eliminatória atual (mata-mata) de um clube a partir
+ * dos eventos reais retornados pela API da ESPN.
+ */
+export function buildTournamentKnockout(
+  events: unknown[],
+  activeClubEspnId: number,
+): {
+  phaseName: string;
+  outcome:
+    | "champion"
+    | "runner_up"
+    | "eliminated"
+    | "qualified"
+    | "in_progress";
+  opponent: string;
+  opponentId?: number;
+  matches: KnockoutLeg[];
+} | null {
+  if (!Array.isArray(events) || events.length === 0) return null;
+
+  const sorted = [...events].sort(
+    (a, b) =>
+      new Date((a as { date?: string }).date || 0).getTime() -
+      new Date((b as { date?: string }).date || 0).getTime(),
+  );
+
+  const upcoming = sorted.find((ev) => !isEventCompleted(ev));
+  const targetPhase = eventPhaseName(
+    upcoming || sorted[sorted.length - 1],
+  );
+  const phaseEvents = sorted.filter((ev) => eventPhaseName(ev) === targetPhase);
+
+  const matches: KnockoutLeg[] = phaseEvents.map((ev) => {
+    const { home, away } = eventCompetitors(ev);
+    const completed = isEventCompleted(ev);
+    const homeScore = parseInt(
+      String(
+        (home as { score?: { displayValue?: string; value?: number } })?.score
+          ?.displayValue ??
+          (home as { score?: { value?: number } })?.score?.value ??
+          "0",
+      ),
+      10,
+    ) || 0;
+    const awayScore = parseInt(
+      String(
+        (away as { score?: { displayValue?: string; value?: number } })?.score
+          ?.displayValue ??
+          (away as { score?: { value?: number } })?.score?.value ??
+          "0",
+      ),
+      10,
+    ) || 0;
+    const dateObj = new Date((ev as { date?: string }).date || 0);
+
+    return {
+      homeTeam: home?.team?.displayName || "Mandante",
+      homeTeamId: parseInt(home?.team?.id || "0", 10) || undefined,
+      awayTeam: away?.team?.displayName || "Visitante",
+      awayTeamId: parseInt(away?.team?.id || "0", 10) || undefined,
+      homeScore: completed ? homeScore : undefined,
+      awayScore: completed ? awayScore : undefined,
+      scoreDisplay: completed ? `${homeScore} - ${awayScore}` : "A disputar",
+      date: isNaN(dateObj.getTime())
+        ? "A definir"
+        : dateObj.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }),
+      status: completed ? "finished" : "notstarted",
+    };
+  });
+
+  const { home, away } = eventCompetitors(phaseEvents[0]);
+  const isHome = home?.team?.id === String(activeClubEspnId);
+  const opponent = isHome ? away : home;
+
+  const allFinished = phaseEvents.every(isEventCompleted);
+  const hasUpcoming = phaseEvents.some((ev) => !isEventCompleted(ev));
+  const lowerPhase = targetPhase.toLowerCase();
+  const isFinal =
+    lowerPhase.includes("final") &&
+    !lowerPhase.includes("semi") &&
+    !lowerPhase.includes("quarter") &&
+    !lowerPhase.includes("quartas") &&
+    !lowerPhase.includes("oitavas");
+
+  let outcome:
+    | "champion"
+    | "runner_up"
+    | "eliminated"
+    | "qualified"
+    | "in_progress";
+
+  if (hasUpcoming || !allFinished) {
+    outcome = "in_progress";
+  } else {
+    let clubGoals = 0;
+    let oppGoals = 0;
+    for (const ev of phaseEvents) {
+      const comp = eventCompetitors(ev);
+      const homeId = comp.home?.team?.id;
+      const homeScore = parseInt(
+        String(
+          (comp.home as { score?: { displayValue?: string; value?: number } })
+            ?.score?.displayValue ??
+            (comp.home as { score?: { value?: number } })?.score?.value ??
+            "0",
+        ),
+        10,
+      ) || 0;
+      const awayScore = parseInt(
+        String(
+          (comp.away as { score?: { displayValue?: string; value?: number } })
+            ?.score?.displayValue ??
+            (comp.away as { score?: { value?: number } })?.score?.value ??
+            "0",
+        ),
+        10,
+      ) || 0;
+      if (homeId === String(activeClubEspnId)) {
+        clubGoals += homeScore;
+        oppGoals += awayScore;
+      } else {
+        clubGoals += awayScore;
+        oppGoals += homeScore;
+      }
+    }
+    const won = clubGoals > oppGoals;
+    outcome = won
+      ? isFinal
+        ? "champion"
+        : "qualified"
+      : isFinal
+        ? "runner_up"
+        : "eliminated";
+  }
+
+  return {
+    phaseName: translatePhaseName(targetPhase),
+    outcome,
+    opponent: opponent?.team?.displayName || "Adversário",
+    opponentId: parseInt(opponent?.team?.id || "0", 10) || undefined,
+    matches,
+  };
 }
 
 export interface ScheduleCheckpoint {
