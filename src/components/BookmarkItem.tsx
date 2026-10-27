@@ -54,17 +54,7 @@ export function BookmarkItem({
       >
         <a
           href={bookmark.url}
-          target="_blank"
-          rel="noopener noreferrer"
           onClick={handleClick}
-          // SE QUISER ABRIR EM NOVA ABA COM O CLIQUE DO MEIO, DESCOMENTE O CÓDIGO ABAIXO
-          // onMouseDown={(e) => {
-          //   if (e.button === 1) {
-          //     e.preventDefault();
-          //     handleClick();
-          //     window.open(bookmark.url, "_blank");
-          //   }
-          // }}
           className="flex items-center flex-grow"
           title={bookmark.description || ""}
         >
@@ -101,17 +91,7 @@ export function BookmarkItem({
     >
       <a
         href={bookmark.url}
-        target="_blank"
-        rel="noopener noreferrer"
         onClick={handleClick}
-        // SE QUISER ABRIR EM NOVA ABA COM O CLIQUE DO MEIO, DESCOMENTE O CÓDIGO ABAIXO
-        // onMouseDown={(e) => {
-        //   if (e.button === 1) {
-        //     e.preventDefault();
-        //     handleClick();
-        //     window.open(bookmark.url, "_blank");
-        //   }
-        // }}
         className="flex flex-col items-center p-2 w-full"
         title={`${bookmark.name || bookmark.title}${bookmark.description ? "\n" + bookmark.description : ""}`}
       >

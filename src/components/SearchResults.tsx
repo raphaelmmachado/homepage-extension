@@ -46,6 +46,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
+
 // Comandos de rolagem direta para seções
 const sectionCommands = [
   {
@@ -158,8 +159,6 @@ export function SearchResults({
                   >
                     <a
                       href={bookmark.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       onClick={() => onClickBookmark(bookmark.url)}
                       className="flex items-center gap-3 flex-grow min-w-0 pr-3 outline-none focus:outline-none"
                     >
@@ -273,5 +272,3 @@ export function SearchResults({
     </div>
   );
 }
-
-
