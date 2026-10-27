@@ -7,6 +7,8 @@ export interface BookmarkData {
   containers: Container[];
   bookmarks: Bookmark[];
   archivedContainerIds: string[];
+  manualTopSiteIds: string[];
+  hiddenTopSiteUrls: string[];
 }
 
 export class BookmarkRepo {
@@ -25,13 +27,61 @@ export class BookmarkRepo {
     localStorage.setItem(key, JSON.stringify(data));
   }
 
+  static getStringArray(key: string): string[] {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.filter((value): value is string => typeof value === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // Older versions stored click counts inside the bookmark objects. Make sure
+  // those counts survive the migration to the chrome.bookmarks database.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static migrateLegacyClicks(savedClicks: Record<string, any>) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+      if (!raw) return;
+      const legacyBookmarks = JSON.parse(raw);
+      if (!Array.isArray(legacyBookmarks)) return;
+
+      let changed = false;
+      for (const bookmark of legacyBookmarks) {
+        if (
+          bookmark?.url &&
+          typeof bookmark.clicks === "number" &&
+          bookmark.clicks > 0 &&
+          savedClicks[bookmark.url] === undefined
+        ) {
+          savedClicks[bookmark.url] = bookmark.clicks;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        this.setLocalData(STORAGE_KEYS.BOOKMARK_CLICKS, savedClicks);
+      }
+    } catch {
+      // Ignore malformed legacy data.
+    }
+  }
+
   static async loadTree(): Promise<BookmarkData> {
     const archivedIdsRaw = localStorage.getItem(STORAGE_KEYS.ARCHIVED_CONTAINERS);
     const archivedContainerIds: string[] = archivedIdsRaw ? JSON.parse(archivedIdsRaw) : [];
 
     const savedClicks = this.getLocalData(STORAGE_KEYS.BOOKMARK_CLICKS);
+    this.migrateLegacyClicks(savedClicks);
     const savedIcons = this.getLocalData(STORAGE_KEYS.CUSTOM_ICONS);
     const savedDescriptions = this.getLocalData(STORAGE_KEYS.DESCRIPTIONS);
+
+    let manualTopSiteIds = this.getStringArray(STORAGE_KEYS.TOP_SITES_MANUAL);
+    const hiddenTopSiteUrls = this.getStringArray(STORAGE_KEYS.TOP_SITES_HIDDEN);
 
     if (typeof chrome === "undefined" || !chrome.bookmarks) {
       let containers: Container[] = [];
@@ -55,6 +105,28 @@ export class BookmarkRepo {
         console.error("Failed to parse local fallback:", e);
       }
 
+      // Migrate bookmarks that used the old pseudo-container "top-sites".
+      const legacyTopSiteIds: string[] = [];
+      bookmarks = bookmarks.map((b) => {
+        if (b.containerId === "top-sites") {
+          legacyTopSiteIds.push(b.id);
+          return { ...b, containerId: "1" };
+        }
+        return b;
+      });
+
+      if (legacyTopSiteIds.length > 0) {
+        if (!containers.some((c) => c.id === "1")) {
+          containers.unshift({ id: "1", title: "Outros Favoritos" });
+        }
+        localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
+        manualTopSiteIds = Array.from(new Set([...manualTopSiteIds, ...legacyTopSiteIds]));
+        localStorage.setItem(
+          STORAGE_KEYS.TOP_SITES_MANUAL,
+          JSON.stringify(manualTopSiteIds),
+        );
+      }
+
       bookmarks = bookmarks.map((b) => ({
         ...b,
         clicks: savedClicks[b.url] || b.clicks || 0,
@@ -62,7 +134,13 @@ export class BookmarkRepo {
         description: savedDescriptions[b.url] || savedDescriptions[b.id] || b.description || "",
       }));
 
-      return { containers, bookmarks, archivedContainerIds };
+      return {
+        containers,
+        bookmarks,
+        archivedContainerIds,
+        manualTopSiteIds,
+        hiddenTopSiteUrls,
+      };
     }
 
     const tree = await chrome.bookmarks.getTree();
@@ -71,7 +149,13 @@ export class BookmarkRepo {
       tree[0]?.children?.[0];
 
     if (!bookmarksBar || !bookmarksBar.children) {
-      return { containers: [], bookmarks: [], archivedContainerIds };
+      return {
+        containers: [],
+        bookmarks: [],
+        archivedContainerIds,
+        manualTopSiteIds,
+        hiddenTopSiteUrls,
+      };
     }
 
     const containers: Container[] = [];
@@ -116,7 +200,13 @@ export class BookmarkRepo {
       containers.unshift({ id: "1", title: "Outros Favoritos" });
     }
 
-    return { containers, bookmarks, archivedContainerIds };
+    return {
+      containers,
+      bookmarks,
+      archivedContainerIds,
+      manualTopSiteIds,
+      hiddenTopSiteUrls,
+    };
   }
 
   static async createContainer(title: string): Promise<Container | null> {
@@ -340,10 +430,25 @@ export class BookmarkRepo {
     }
   }
   
-  static incrementClicks(url: string) {
+  static incrementClicks(url: string): number {
     const clicks = this.getLocalData(STORAGE_KEYS.BOOKMARK_CLICKS);
     clicks[url] = (clicks[url] || 0) + 1;
     this.setLocalData(STORAGE_KEYS.BOOKMARK_CLICKS, clicks);
+    return clicks[url];
+  }
+
+  static saveManualTopSiteIds(ids: string[]) {
+    localStorage.setItem(STORAGE_KEYS.TOP_SITES_MANUAL, JSON.stringify(ids));
+  }
+
+  static hideTopSite(url: string) {
+    const hidden = this.getStringArray(STORAGE_KEYS.TOP_SITES_HIDDEN);
+    if (!hidden.includes(url)) {
+      localStorage.setItem(
+        STORAGE_KEYS.TOP_SITES_HIDDEN,
+        JSON.stringify([...hidden, url]),
+      );
+    }
   }
 
   static archiveContainer(id: string) {

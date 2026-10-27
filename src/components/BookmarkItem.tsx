@@ -11,13 +11,15 @@ export function BookmarkItem({
   bookmark,
   layout,
   onEdit,
+  onRemove,
   onClickBookmark,
   provided,
   snapshot,
 }: {
   bookmark: Bookmark;
   layout: Layout;
-  onEdit: () => void;
+  onEdit?: () => void;
+  onRemove?: () => void;
   onClickBookmark?: (url: string) => void;
   provided?: DraggableProvided;
   snapshot?: DraggableStateSnapshot;
@@ -71,12 +73,26 @@ export function BookmarkItem({
           </span>
         </a>
         <div className="flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity">
-          <button
-            onClick={onEdit}
-            className="p-1 text-gray-500 hover:text-blue-600"
-          >
-            <div dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }} />
-          </button>
+          {onRemove ? (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="p-1 text-gray-500 hover:text-red-600"
+              title="Remover dos Mais Acessados"
+            >
+              <div dangerouslySetInnerHTML={{ __html: svgs.closeSVG }} />
+            </button>
+          ) : onEdit ? (
+            <button
+              onClick={onEdit}
+              className="p-1 text-gray-500 hover:text-blue-600"
+            >
+              <div dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }} />
+            </button>
+          ) : null}
         </div>
       </div>
     );
@@ -107,17 +123,31 @@ export function BookmarkItem({
           {bookmark.name || bookmark.title}
         </span>
       </a>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onEdit();
-        }}
-        className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-transparent opacity-0 group-hover/item:opacity-100 transition-all duration-200 hover:scale-110 z-20 cursor-pointer"
-        title="Opções do favorito"
-      >
-        <div dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }} />
-      </button>
+      {onRemove ? (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="absolute top-1 right-1 p-1 text-gray-400 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 bg-transparent opacity-0 group-hover/item:opacity-100 transition-all duration-200 hover:scale-110 z-20 cursor-pointer"
+          title="Remover dos Mais Acessados"
+        >
+          <div dangerouslySetInnerHTML={{ __html: svgs.closeSVG }} />
+        </button>
+      ) : onEdit ? (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-transparent opacity-0 group-hover/item:opacity-100 transition-all duration-200 hover:scale-110 z-20 cursor-pointer"
+          title="Opções do favorito"
+        >
+          <div dangerouslySetInnerHTML={{ __html: svgs.ellipsisSVG }} />
+        </button>
+      ) : null}
     </div>
   );
 }

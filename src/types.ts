@@ -21,6 +21,8 @@ export const STORAGE_KEYS = {
   BOOKMARKS: "my-homepage-bookmarks-v2",
   CONTAINERS: "my-homepage-containers-v2",
   BOOKMARK_CLICKS: "my-homepage-bookmark-clicks",
+  TOP_SITES_MANUAL: "my-homepage-top-sites-manual",
+  TOP_SITES_HIDDEN: "my-homepage-top-sites-hidden",
   CUSTOM_ICONS: "my-homepage-custom-icons",
   DESCRIPTIONS: "my-homepage-bookmark-descriptions",
   SEARCH_ENGINE: "my-homepage-search-engine",

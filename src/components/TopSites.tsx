@@ -6,7 +6,7 @@ import * as svgs from "../svgs";
 type Props = {
   automaticTopSites: Bookmark[];
   manualTopSites: Bookmark[];
-  openEditBookmark: (bookmark: Bookmark) => void;
+  onRemoveTopSite: (bookmark: Bookmark) => void;
   onClickBookmark: (url: string) => void;
   openAddBookmark: (containerId: string) => void;
 };
@@ -14,14 +14,10 @@ type Props = {
 export function TopSites({
   automaticTopSites,
   manualTopSites,
-  openEditBookmark,
+  onRemoveTopSite,
   onClickBookmark,
   openAddBookmark,
 }: Props) {
-  if (automaticTopSites.length === 0 && manualTopSites.length === 0) {
-    return null;
-  }
-
   return (
     <div id="topsites" className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/60 hover:shadow-md mb-6 relative transition-all w-full col-span-full">
       <div className="flex justify-between items-center mb-4">
@@ -29,6 +25,12 @@ export function TopSites({
           Mais Acessados
         </h2>
       </div>
+      {automaticTopSites.length === 0 && manualTopSites.length === 0 && (
+        <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">
+          Nenhum site na lista. Arraste um favorito para cá ou use o botão
+          abaixo.
+        </p>
+      )}
       <Droppable droppableId="top-sites" direction="horizontal">
         {(provided) => (
           <div
@@ -42,7 +44,7 @@ export function TopSites({
                 key={bookmark.id}
                 bookmark={bookmark}
                 layout="grid"
-                onEdit={() => openEditBookmark(bookmark)}
+                onRemove={() => onRemoveTopSite(bookmark)}
                 onClickBookmark={onClickBookmark}
               />
             ))}
@@ -58,7 +60,7 @@ export function TopSites({
                   <BookmarkItem
                     bookmark={bookmark}
                     layout="grid"
-                    onEdit={() => openEditBookmark(bookmark)}
+                    onRemove={() => onRemoveTopSite(bookmark)}
                     onClickBookmark={onClickBookmark}
                     provided={provided}
                     snapshot={snapshot}

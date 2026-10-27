@@ -13,6 +13,8 @@ export function useBookmarks(
   const [containers, setContainers] = useState<Container[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [archivedContainerIds, setArchivedContainerIds] = useState<string[]>([]);
+  const [manualTopSiteIds, setManualTopSiteIds] = useState<string[]>([]);
+  const [hiddenTopSiteUrls, setHiddenTopSiteUrls] = useState<string[]>([]);
   
   const [isBookmarkDialogOpen, setIsBookmarkDialogOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
@@ -26,6 +28,8 @@ export function useBookmarks(
       setContainers(data.containers);
       setBookmarks(data.bookmarks);
       setArchivedContainerIds(data.archivedContainerIds);
+      setManualTopSiteIds(data.manualTopSiteIds);
+      setHiddenTopSiteUrls(data.hiddenTopSiteUrls);
     } catch (err) {
       console.error("Failed to load bookmarks:", err);
     }
@@ -54,6 +58,26 @@ export function useBookmarks(
 
   const activeContainers = containers.filter(c => !archivedContainerIds.includes(c.id));
   const archivedContainers = containers.filter(c => archivedContainerIds.includes(c.id));
+
+  const manualTopSites = manualTopSiteIds
+    .map((id) => bookmarks.find((bookmark) => bookmark.id === id))
+    .filter((bookmark): bookmark is Bookmark => Boolean(bookmark));
+
+  const manualTopSiteIdSet = new Set(manualTopSiteIds);
+  const hiddenTopSiteUrlSet = new Set(hiddenTopSiteUrls);
+  const seenTopSiteUrls = new Set<string>();
+  const automaticTopSites = bookmarks
+    .filter((bookmark) => {
+      if (manualTopSiteIdSet.has(bookmark.id)) return false;
+      if (bookmark.containerId === "top-sites") return false;
+      if (hiddenTopSiteUrlSet.has(bookmark.url)) return false;
+      if ((bookmark.clicks || 0) <= 0) return false;
+      if (seenTopSiteUrls.has(bookmark.url)) return false;
+      seenTopSiteUrls.add(bookmark.url);
+      return true;
+    })
+    .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
+    .slice(0, Math.max(0, 12 - manualTopSites.length));
 
   const addContainer = async () => {
     const title = await showDialog({ type: "prompt", title: "Nova Pasta", message: "Nome da Pasta:" });
@@ -107,6 +131,41 @@ export function useBookmarks(
     setIsBookmarkDialogOpen(true);
   };
 
+  const pinTopSite = (bookmarkId: string, index?: number) => {
+    setManualTopSiteIds((prev) => {
+      const next = prev.filter((id) => id !== bookmarkId);
+      const insertAt =
+        index === undefined
+          ? next.length
+          : Math.max(0, Math.min(index, next.length));
+      next.splice(insertAt, 0, bookmarkId);
+      BookmarkRepo.saveManualTopSiteIds(next);
+      return next;
+    });
+  };
+
+  const unpinTopSite = (bookmarkId: string) => {
+    setManualTopSiteIds((prev) => {
+      if (!prev.includes(bookmarkId)) return prev;
+      const next = prev.filter((id) => id !== bookmarkId);
+      BookmarkRepo.saveManualTopSiteIds(next);
+      return next;
+    });
+  };
+
+  const hideTopSite = (url: string) => {
+    BookmarkRepo.hideTopSite(url);
+    setHiddenTopSiteUrls((prev) =>
+      prev.includes(url) ? prev : [...prev, url],
+    );
+  };
+
+  // Removes the site only from "Mais Acessados"; the bookmark itself is kept.
+  const removeFromTopSites = (bookmark: Bookmark) => {
+    unpinTopSite(bookmark.id);
+    hideTopSite(bookmark.url);
+  };
+
   const saveBookmark = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -129,13 +188,20 @@ export function useBookmarks(
         },
       );
     } else if (activeContainerId) {
-      await BookmarkRepo.createBookmark({
-        parentId: activeContainerId,
+      const isTopSite = activeContainerId === "top-sites";
+      const created = await BookmarkRepo.createBookmark({
+        parentId: isTopSite ? "1" : activeContainerId,
         title,
         url,
         customIcon: customIcon || undefined,
         description: description || undefined,
       });
+      setIsBookmarkDialogOpen(false);
+      await loadData();
+      if (isTopSite && created?.id) {
+        pinTopSite(created.id);
+      }
+      return;
     }
     setIsBookmarkDialogOpen(false);
     await loadData();
@@ -153,7 +219,12 @@ export function useBookmarks(
   };
 
   const handleBookmarkClick = (url: string) => {
-    BookmarkRepo.incrementClicks(url);
+    const clicks = BookmarkRepo.incrementClicks(url);
+    setBookmarks((prev) =>
+      prev.map((bookmark) =>
+        bookmark.url === url ? { ...bookmark, clicks } : bookmark,
+      ),
+    );
   };
 
   const handleExport = () => {
@@ -185,10 +256,42 @@ export function useBookmarks(
         await BookmarkRepo.moveBookmark(draggableId, "1", destination.index);
         loadData();
       }
-    } else {
-      await BookmarkRepo.moveBookmark(draggableId, destination.droppableId, destination.index);
-      loadData();
+      return;
     }
+
+    // Reordering inside "Mais Acessados" only changes the pinned list.
+    if (source.droppableId === "top-sites" && destination.droppableId === "top-sites") {
+      setManualTopSiteIds((prev) => {
+        const fromIndex = prev.indexOf(draggableId);
+        if (fromIndex === -1) return prev;
+        const next = [...prev];
+        next.splice(fromIndex, 1);
+        next.splice(Math.max(0, Math.min(destination.index, next.length)), 0, draggableId);
+        BookmarkRepo.saveManualTopSiteIds(next);
+        return next;
+      });
+      return;
+    }
+
+    // Dropping a bookmark on "Mais Acessados" pins it; the original bookmark stays where it is.
+    if (destination.droppableId === "top-sites") {
+      pinTopSite(draggableId, destination.index);
+      return;
+    }
+
+    // Dragging a pinned site out of "Mais Acessados" only unpins it.
+    if (source.droppableId === "top-sites") {
+      const bookmark = bookmarks.find((b) => b.id === draggableId);
+      if (bookmark) {
+        removeFromTopSites(bookmark);
+      } else {
+        unpinTopSite(draggableId);
+      }
+      return;
+    }
+
+    await BookmarkRepo.moveBookmark(draggableId, destination.droppableId, destination.index);
+    loadData();
   };
 
   return {
@@ -201,6 +304,9 @@ export function useBookmarks(
     archiveContainer,
     unarchiveContainer,
     bookmarks,
+    manualTopSites,
+    automaticTopSites,
+    removeFromTopSites,
     isBookmarkDialogOpen,
     setIsBookmarkDialogOpen,
     editingBookmark,

@@ -43,6 +43,9 @@ function App() {
     archiveContainer,
     unarchiveContainer,
     bookmarks,
+    manualTopSites,
+    automaticTopSites,
+    removeFromTopSites,
     isBookmarkDialogOpen,
     setIsBookmarkDialogOpen,
     editingBookmark,
@@ -118,12 +121,6 @@ function App() {
       })
     : [];
 
-  const manualTopSites = bookmarks.filter((b) => b.containerId === "top-sites");
-  const automaticTopSites = bookmarks
-    .filter((b) => b.containerId !== "top-sites" && (b.clicks || 0) > 0)
-    .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
-    .slice(0, Math.max(0, 12 - manualTopSites.length));
-
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col min-h-screen transition-colors duration-300 font-['Poppins']">
       <Header
@@ -167,7 +164,7 @@ function App() {
             <TopSites
               automaticTopSites={automaticTopSites}
               manualTopSites={manualTopSites}
-              openEditBookmark={openEditBookmark}
+              onRemoveTopSite={removeFromTopSites}
               onClickBookmark={handleBookmarkClick}
               openAddBookmark={openAddBookmark}
             />
