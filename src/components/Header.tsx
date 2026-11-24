@@ -132,6 +132,7 @@ export function Header({
             id="web-search-bar"
             type="search"
             value={searchTerm}
+            onClick={() => setIsEngineOptionsOpen(false)}
             onChange={(e) => setSearchTerm(e.currentTarget.value)}
             onKeyDown={handleSearchBarKeyDown}
             placeholder={engine.placeholder}
